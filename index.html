@@ -6,118 +6,13 @@
   <title>LoL Flash Tracker - Launcher</title>
   <link rel="icon" href="./images/Flash.png" type="image/png" />
   
+  <link rel="stylesheet" href="styles.css">
+  <script src="modules/config.js"></script>
+  <script src="modules/ChampionManager.js"></script>
+  <script src="modules/ValidationManager.js"></script>
+  <script src="modules/EventManager.js"></script>
   <style>
-    :root {
-      --bg-primary: #0a0a0a;
-      --bg-secondary: #1a1a1a;
-      --bg-tertiary: #2a2a2a;
-      --bg-card: #1e1e1e;
-      --bg-card-hover: #2a2a2a;
-      --bg-card-selected: #2d2d44;
-      --accent-primary: #bb86fc;
-      --accent-secondary: #03dac6;
-      --text-primary: #ffffff;
-      --text-secondary: #e0e0e0;
-      --text-muted: #aaa;
-      --border: #333;
-      --border-focus: #bb86fc;
-      --error: #ff5252;
-      --success: #4caf50;
-      --warning: #ff9800;
-      --shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-      --shadow-hover: 0 6px 16px rgba(187, 134, 252, 0.3);
-      --radius: 8px;
-      --radius-large: 14px;
-      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    body.light-theme {
-      --bg-primary: #e8e8e8;
-      --bg-secondary: #f0f0f0;
-      --bg-tertiary: #d0d0d0;
-      --bg-card: #f0f0f0;
-      --bg-card-hover: #e0e0e0;
-      --bg-card-selected: #e3f2fd;
-      --accent-primary: #bb86fc;
-      --accent-secondary: #03dac6;
-      --text-primary: #212121;
-      --text-secondary: #424242;
-      --text-muted: #757575;
-      --border: #d0d0d0;
-      --border-focus: #bb86fc;
-      --shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      --shadow-hover: 0 6px 16px rgba(187, 134, 252, 0.2);
-      background: var(--bg-primary);
-    }
-
-    body.light-theme .action-button.host {
-      background: linear-gradient(45deg, #7b1fa2, #9c27b0);
-      color: #ffffff;
-    }
-
-    body.light-theme .action-button.join {
-      background: linear-gradient(45deg, #2e7d32, #388e3c);
-      color: #ffffff;
-    }
-
-    body.light-theme .action-button.solo {
-      background: linear-gradient(45deg, #424242, #616161);
-      color: #ffffff;
-    }
-
-    body.light-theme #helpBtn {
-      background: white;
-      border-color: #d1d5db;
-      color: #6b7280;
-    }
-
-    body.light-theme #helpBtn.active {
-      background: #3b82f6 !important;
-      border-color: #2563eb !important;
-      color: white !important;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
-    }
-
-    * { 
-      box-sizing: border-box;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-20px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-
-    body {
-      font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1a2e 100%);
-      color: var(--text-secondary);
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-      gap: 16px;
-      overflow-x: hidden;
-      transition: background 1s ease;
-    }
-
+    /* Diana mode específico */
     body.diana-mode {
       background: linear-gradient(135deg, rgba(10, 10, 10, 0.8) 0%, rgba(26, 26, 46, 0.8) 100%), url('./Champions_assets/Diana_0.jpg');
       background-size: cover;
@@ -125,23 +20,7 @@
       background-attachment: fixed;
     }
 
-    /* Indicador de estado */
-    .status-indicator {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--bg-card);
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      font-size: 0.8rem;
-      z-index: 1000;
-      animation: slideIn 0.5s ease-out;
-    }
-
+    /* Estilos específicos del launcher */
     .status-dot {
       width: 8px;
       height: 8px;
@@ -153,21 +32,9 @@
     .status-dot.warning { background: var(--warning); }
     .status-dot.error { background: var(--error); }
 
-    /* Switch de idioma */
-    .language-switch {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--bg-card);
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      font-size: 0.8rem;
-      z-index: 1000;
-      animation: slideIn 0.5s ease-out;
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
     }
 
     .lang-label {
@@ -182,172 +49,7 @@
       color: var(--accent-primary);
     }
 
-    /* Icono de la app */
-    .app-icon {
-      width: 72px;
-      height: 72px;
-      margin-bottom: 16px;
-      border-radius: var(--radius-large);
-      box-shadow: var(--shadow);
-      animation: fadeInUp 0.8s ease-out;
-      transition: var(--transition);
-    }
-
-    .app-icon:hover {
-      transform: scale(1.1);
-      box-shadow: var(--shadow-hover);
-    }
-
-    /* Título */
-    h1 { 
-      font-size: 1.8rem; 
-      color: var(--accent-primary); 
-      margin: 0 0 8px 0; 
-      font-weight: 500; 
-      letter-spacing: 0.5px;
-      animation: fadeInUp 0.8s ease-out 0.2s both;
-      background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* Contenedor principal */
-    .form-group { 
-      width: 100%; 
-      max-width: 320px; 
-      text-align: left; 
-      font-size: 0.9rem; 
-      color: var(--text-muted);
-      animation: fadeInUp 0.8s ease-out 0.4s both;
-    }
-
-    /* Caja de invitado - agrupa elementos más usados */
-    .guest-box {
-      background: var(--bg-card);
-      border: 2px solid var(--accent-primary);
-      border-radius: var(--radius-large);
-      padding: 20px;
-      margin-bottom: 20px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 0 20px rgba(187, 134, 252, 0.2);
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .guest-box.compact {
-      padding: 20px 20px 12px 20px;
-      transform: translateY(-5px);
-    }
-
-    .guest-box::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-    }
-
-
-
-    .guest-box .nickname-container {
-      margin-bottom: 20px;
-    }
-
-    .guest-box .role-card {
-      margin-bottom: 4px;
-      border-color: var(--accent-primary);
-      background: rgba(187, 134, 252, 0.05);
-    }
-
-    .guest-box .action-button {
-      margin-top: 0;
-    }
-
-    /* Separador visual */
-    .section-separator {
-      width: 100%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border), transparent);
-      margin: 24px 0;
-      position: relative;
-    }
-
-    .section-separator::after {
-      content: "⚡";
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--bg-primary);
-      padding: 0 8px;
-      font-size: 0.8rem;
-      color: var(--accent-primary);
-    }
-
-    /* Labels */
-    .form-group label { 
-      display: block; 
-      margin-bottom: 6px; 
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    /* Input de nickname */
-    .nickname-container {
-      position: relative;
-      margin-bottom: 16px;
-    }
-
-    .form-group input[type="text"] {
-      width: 100%; 
-      padding: 12px 16px; 
-      border-radius: var(--radius); 
-      border: 2px solid var(--border); 
-      background: var(--bg-card); 
-      color: var(--text-primary); 
-      font-family: inherit; 
-      font-size: 0.95rem;
-      transition: var(--transition);
-      outline: none;
-    }
-
-    .form-group input[type="text"]:focus {
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.1);
-      background: var(--bg-secondary);
-    }
-
-    .form-group input[type="text"].error {
-      border-color: var(--error);
-      box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.1);
-    }
-
-    .form-group input[type="text"].success {
-      border-color: var(--success);
-      box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-    }
-
-
-
-    /* Tarjetas de rol */
-    .role-card { 
-      background: var(--bg-card); 
-      border: 2px solid var(--border); 
-      border-radius: var(--radius); 
-      padding: 14px 16px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between; 
-      cursor: pointer; 
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      margin-bottom: 8px;
-      position: relative;
-      overflow: hidden;
-    }
-
+    /* Animaciones de transición */
     .role-card.fade-out {
       opacity: 0;
       transform: translateY(-15px) scale(0.95);
@@ -362,76 +64,6 @@
     .role-card.visible {
       opacity: 1;
       transform: translateY(0) scale(1);
-    }
-
-    .role-card:hover { 
-      background: var(--bg-card-hover); 
-      transform: translateY(-2px); 
-      box-shadow: var(--shadow-hover);
-      border-color: var(--accent-primary);
-    }
-
-    .role-card.selected { 
-      background: var(--bg-card-selected); 
-      border-color: var(--accent-primary); 
-      box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.3);
-    }
-
-    .role-card input { 
-      position: absolute;
-      opacity: 0;
-      width: 1px;
-      height: 1px;
-      pointer-events: none;
-    }
-
-    .role-card-content { 
-      display: flex; 
-      align-items: center; 
-      gap: 12px; 
-      font-weight: 500;
-      position: relative;
-      z-index: 1;
-    }
-
-    .role-icon { 
-      width: 32px; 
-      height: 32px; 
-      background: var(--bg-tertiary); 
-      border-radius: 50%; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      font-size: 1.2rem;
-      transition: var(--transition);
-    }
-
-    .role-card:hover .role-icon {
-      transform: scale(1.1);
-      background: var(--accent-primary);
-    }
-
-    /* Botones de acción */
-    .action-button { 
-      margin-top: 8px; 
-      padding: 14px 20px; 
-      font-size: 1rem; 
-      font-weight: 600; 
-      border: none; 
-      border-radius: var(--radius); 
-      cursor: pointer; 
-      box-shadow: var(--shadow); 
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-      width: 100%; 
-      max-width: 320px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      gap: 10px;
-      position: relative;
-      overflow: hidden;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     .action-button.slide-out {
@@ -450,108 +82,23 @@
       transform: translateX(0) scale(1);
     }
 
-    .action-button.host { 
-      background: linear-gradient(45deg, var(--accent-primary), #9c64d6);
-      color: var(--text-primary);
+    /* Estilos específicos del tema claro */
+    body.light-theme .action-button.host {
+      background: linear-gradient(45deg, #7b1fa2, #9c27b0);
+      color: #ffffff;
     }
 
-    .action-button.join { 
-      background: linear-gradient(45deg, #4caf50, #2e7d32);
-      color: var(--text-primary);
+    body.light-theme .action-button.join {
+      background: linear-gradient(45deg, #2e7d32, #388e3c);
+      color: #ffffff;
     }
 
-    .action-button.solo { 
-      background: linear-gradient(45deg, var(--text-muted), #666);
-      color: var(--text-primary);
+    body.light-theme .action-button.solo {
+      background: linear-gradient(45deg, #424242, #616161);
+      color: #ffffff;
     }
 
-    .action-button:hover { 
-      filter: brightness(1.2);
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-    }
-
-    /* Switch de modo */
-    .mode-switch-container { 
-      width: 100%; 
-      max-width: 320px; 
-      margin: 20px 0 16px; 
-      font-size: 0.9rem; 
-      color: var(--text-muted);
-    }
-
-    .switch-wrapper { 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      background: var(--bg-card); 
-      padding: 12px 16px; 
-      border-radius: var(--radius); 
-      border: 1px solid var(--border);
-      transition: var(--transition);
-    }
-
-    .switch-wrapper:hover {
-      border-color: var(--accent-primary);
-      background: var(--bg-card-hover);
-    }
-
-    .switch-label { 
-      display: flex; 
-      align-items: center; 
-      gap: 8px; 
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
-
-    .switch { 
-      position: relative; 
-      display: inline-block; 
-      width: 56px; 
-      height: 28px;
-    }
-
-    .switch input { 
-      opacity: 0; 
-      width: 0; 
-      height: 0; 
-    }
-
-    .slider { 
-      position: absolute; 
-      cursor: pointer; 
-      top: 0; 
-      left: 0; 
-      right: 0; 
-      bottom: 0; 
-      background-color: var(--bg-tertiary); 
-      transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-      border-radius: 30px;
-      border: 2px solid var(--border);
-    }
-
-    .slider:before { 
-      position: absolute; 
-      content: ""; 
-      height: 20px; 
-      width: 20px; 
-      left: 2px; 
-      bottom: 2px; 
-      background-color: var(--text-primary); 
-      transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    input:checked + .slider { 
-      background-color: var(--accent-primary);
-      border-color: var(--accent-primary);
-    }
-
-    input:checked + .slider:before { 
-      transform: translateX(26px); 
-    }
-
-    /* Configuración avanzada */
+    /* Configuración avanzada específica */
     .advanced-settings {
       width: 100%;
       max-width: 320px;
@@ -560,9 +107,6 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
-    }
-
-    .advanced-settings {
       position: relative;
     }
 
@@ -579,30 +123,6 @@
       gap: 8px;
     }
 
-    #helpBtn:hover {
-      opacity: 1;
-      border-color: var(--accent-primary);
-      color: var(--accent-primary);
-      background: rgba(187, 134, 252, 0.1);
-    }
-
-    #helpBtn:active {
-      transform: scale(0.95);
-    }
-
-    #helpBtn.active {
-      background: #3b82f6 !important;
-      color: white !important;
-      border-color: #2563eb !important;
-      opacity: 1;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
-    }
-
-    #helpBtn.active:hover {
-      background: #2563eb !important;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4) !important;
-    }
-
     .advanced-settings summary::-webkit-details-marker {
       display: none;
     }
@@ -614,10 +134,6 @@
 
     .advanced-settings[open] summary::before {
       transform: rotate(90deg);
-    }
-
-    .advanced-settings summary:hover {
-      background: var(--bg-card-hover);
     }
 
     .settings-panel {
@@ -660,145 +176,158 @@
       font-family: inherit;
     }
 
-    /* Toast notifications */
-    .toast {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-100px);
-      background: var(--bg-card);
-      color: var(--text-primary);
-      padding: 12px 20px;
-      border-radius: var(--radius);
-      border-left: 4px solid var(--accent-primary);
-      box-shadow: var(--shadow);
-      z-index: 10000;
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      max-width: 300px;
-      text-align: center;
+    /* Elementos específicos del launcher */
+    .guest-box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
     }
 
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
+    .guest-box .nickname-container {
+      margin-bottom: 20px;
     }
 
-    .toast.toast-error {
-      border-left-color: var(--error);
-      background: rgba(255, 82, 82, 0.1);
+    .guest-box .role-card {
+      margin-bottom: 4px;
+      border-color: var(--accent-primary);
+      background: rgba(187, 134, 252, 0.05);
     }
 
-    .toast.toast-success {
-      border-left-color: var(--success);
-      background: rgba(76, 175, 80, 0.1);
+    .guest-box .action-button {
+      margin-top: 0;
     }
 
-    .toast.toast-warning {
-      border-left-color: var(--warning);
-      background: rgba(255, 152, 0, 0.1);
-    }
-
-    /* Error message */
-    .error-message {
-      color: var(--error);
-      font-size: 0.8rem;
-      margin-top: 4px;
-      max-height: 0;
-      opacity: 0;
-      overflow: hidden;
-      transition: all 0.3s ease;
-    }
-
-    .error-message.show {
-      max-height: 50px;
-      opacity: 1;
-    }
-
-    .version-footer {
-      margin-top: 8px;
-      margin-bottom: 6px;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      text-align: center;
-      opacity: 0.6;
-      letter-spacing: 0.5px;
-      font-family: 'Courier New', monospace;
+    .section-separator {
       width: 100%;
-      max-width: 320px;
-      padding: 6px 0;
-      border-top: 1px solid var(--border);
-      transition: opacity 0.3s, color 0.3s;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 24px 0;
+      position: relative;
     }
 
-    /* Responsive */
-    @media (max-width: 640px) {
-      .autocomplete-dropdown {
-        width: 180px;
-      }
+    .section-separator::after {
+      content: "⚡";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-primary);
+      padding: 0 8px;
+      font-size: 0.8rem;
+      color: var(--accent-primary);
     }
 
-    @media (max-width: 480px) {
-      body {
-        padding: 15px;
-        gap: 12px;
-      }
+    .mode-switch-container { 
+      width: 100%; 
+      max-width: 320px; 
+      margin: 20px 0 16px; 
+      font-size: 0.9rem; 
+      color: var(--text-muted);
+    }
 
-      .action-button { 
-        font-size: 0.95rem; 
-        padding: 12px 16px; 
-        gap: 8px; 
-      }
+    .switch-wrapper { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: var(--bg-card); 
+      padding: 12px 16px; 
+      border-radius: var(--radius); 
+      border: 1px solid var(--border);
+      transition: var(--transition);
+    }
 
-      h1 { 
-        font-size: 1.6rem; 
-      }
+    .switch-wrapper:hover {
+      border-color: var(--accent-primary);
+      background: var(--bg-card-hover);
+    }
 
-      .app-icon { 
-        width: 56px; 
-        height: 56px; 
-      }
+    .switch-label { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
 
-      .form-group input[type="text"] { 
-        font-size: 0.9rem; 
-        padding: 10px 14px;
-      }
+    .role-card input { 
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    }
 
-      .role-card {
-        padding: 12px 14px;
-      }
+    .role-card-content { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+    }
 
-      .status-indicator {
-        position: relative;
-        top: auto;
-        right: auto;
-        margin-bottom: 10px;
-      }
+    .role-icon { 
+      width: 32px; 
+      height: 32px; 
+      background: var(--bg-tertiary); 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 1.2rem;
+      transition: var(--transition);
+    }
 
-      .language-switch {
-        position: relative;
-        top: auto;
-        left: auto;
-        margin-bottom: 10px;
-      }
+    .role-card:hover .role-icon {
+      transform: scale(1.1);
+      background: var(--accent-primary);
+    }
 
-      .guest-box {
-        padding: 16px;
-        margin-bottom: 16px;
-      }
+    .nickname-container {
+      position: relative;
+      margin-bottom: 16px;
+    }
 
-      .autocomplete-dropdown {
-        top: 100%;
-        left: 0;
-        right: 0;
-        width: auto;
-        border-radius: 0 0 var(--radius) var(--radius);
-      }
+    /* Help button específico */
+    #helpBtn:hover {
+      opacity: 1;
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      background: rgba(187, 134, 252, 0.1);
+    }
 
-      .autocomplete-dropdown::before,
-      .autocomplete-dropdown::after {
-        display: none;
-      }
+    #helpBtn:active {
+      transform: scale(0.95);
+    }
+
+    #helpBtn.active {
+      background: #3b82f6 !important;
+      color: white !important;
+      border-color: #2563eb !important;
+      opacity: 1;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+    }
+
+    #helpBtn.active:hover {
+      background: #2563eb !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4) !important;
+    }
+
+    body.light-theme #helpBtn {
+      background: white;
+      border-color: #d1d5db;
+      color: #6b7280;
+    }
+
+    body.light-theme #helpBtn.active {
+      background: #3b82f6 !important;
+      border-color: #2563eb !important;
+      color: white !important;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
     }
   </style>
   
@@ -1057,6 +586,7 @@
            role="radio" 
            aria-checked="true"
            tabindex="0"
+           style="border-color: rgba(187, 134, 252, 0.3);"
            onclick="selectRole('join')" 
            onkeydown="handleKeyDown(event, 'join')">
         <div class="role-card-content">
@@ -1218,7 +748,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.2.0 - 8/9/25 - Github update
+      Lol Spell Tracker v0.2.1 - 8/9/25 - modularización, optimizacion css, fixes visuales, fixes easter-egg
     </div>
   </div>
 
@@ -1331,7 +861,7 @@
     }
 
     // ====================== VARIABLES GLOBALES ======================
-    const champions = ['Aatrox', 'Ahri', 'Akali', 'Akshan', 'Alistar', 'Ambessa', 'Amumu', 'Anivia', 'Annie', 'Aphelios', 'Ashe', 'Aurelion Sol', 'Aurora', 'Azir', 'Bard', 'Bel\'Veth', 'Blitzcrank', 'Brand', 'Braum', 'Briar', 'Caitlyn', 'Camille', 'Cassiopeia', 'Cho\'Gath', 'Corki', 'Darius', 'Diana', 'Dr. Mundo', 'Draven', 'Ekko', 'Elise', 'Evelynn', 'Ezreal', 'Fiddlesticks', 'Fiora', 'Fizz', 'Galio', 'Gangplank', 'Garen', 'Gnar', 'Gragas', 'Graves', 'Gwen', 'Hecarim', 'Heimerdinger', 'Hwei', 'Illaoi', 'Irelia', 'Ivern', 'Janna', 'Jarvan IV', 'Jax', 'Jayce', 'Jhin', 'Jinx', 'K\'Sante', 'Kai\'Sa', 'Kalista', 'Karma', 'Karthus', 'Kassadin', 'Katarina', 'Kayle', 'Kayn', 'Kennen', 'Kha\'Zix', 'Kindred', 'Kled', 'Kog\'Maw', 'LeBlanc', 'Lee Sin', 'Leona', 'Lillia', 'Lissandra', 'Lucian', 'Lulu', 'Lux', 'Malphite', 'Malzahar', 'Maokai', 'Master Yi', 'Mel', 'Milio', 'Miss Fortune', 'Mordekaiser', 'Morgana', 'Naafiri', 'Nami', 'Nasus', 'Nautilus', 'Neeko', 'Nidalee', 'Nilah', 'Nocturne', 'Nunu & Willump', 'Olaf', 'Orianna', 'Ornn', 'Pantheon', 'Poppy', 'Pyke', 'Qiyana', 'Quinn', 'Rakan', 'Rammus', 'Rek\'Sai', 'Rell', 'Renata Glasc', 'Renekton', 'Rengar', 'Riven', 'Rumble', 'Ryze', 'Samira', 'Sejuani', 'Senna', 'Seraphine', 'Sett', 'Shaco', 'Shen', 'Shyvana', 'Singed', 'Sion', 'Sivir', 'Skarner', 'Smolder', 'Sona', 'Soraka', 'Swain', 'Sylas', 'Syndra', 'Tahm Kench', 'Taliyah', 'Talon', 'Taric', 'Teemo', 'Thresh', 'Tristana', 'Trundle', 'Tryndamere', 'Twisted Fate', 'Twitch', 'Udyr', 'Urgot', 'Varus', 'Vayne', 'Veigar', 'Vel\'Koz', 'Vex', 'Vi', 'Viego', 'Viktor', 'Vladimir', 'Volibear', 'Warwick', 'Wukong', 'Xayah', 'Xerath', 'Xin Zhao', 'Yasuo', 'Yone', 'Yorick', 'Yuumi', 'Zac', 'Zed', 'Zeri', 'Ziggs', 'Zilean', 'Zoe', 'Zyra'];
+    // Champions list moved to ChampionManager.js
 
     let dianaEffectsActive = false;
     let dianaPulseInterval = null;
@@ -1437,6 +967,8 @@
       
       // Si es Diana y tema oscuro, activar easter egg
       if (randomChampion.toLowerCase() === 'diana' && !document.body.classList.contains('light-theme')) {
+        dianaEffectsActive = true;
+        
         btn.style.transform = 'scale(1)';
         btn.style.filter = 'grayscale(1)';
         btn.style.pointerEvents = 'none';
@@ -1444,7 +976,6 @@
         
         const dianaName = currentLang === 'es' ? 'Diana, El desdén de la Luna' : 'Diana, Scorn of the Moon';
         elements.nicknameInput.value = dianaName;
-        elements.nicknameInput.dispatchEvent(new Event('input'));
         
         // Activar fondo Diana
         document.body.classList.add('diana-mode');
@@ -1472,11 +1003,11 @@
         // Store temporary Diana settings
         window.tempDianaColor = 'linear-gradient(45deg, #ffffff, #87ceeb)';
         window.tempDianaChampion = 'Diana';
-        updatePreview();
         
         // Sonido
         const audio = new Audio('./sound/Diana_Select.ogg');
-        audio.play().catch(() => {});
+        audio.volume = 0.5;
+        audio.play().catch(e => console.log('Audio blocked:', e));
         
         // Cambiar botones
         const joinBtn = document.getElementById('joinRoomBtn');
@@ -1531,8 +1062,6 @@
           }, 2000);
         }, 200);
         
-        dianaEffectsActive = true;
-        
         setTimeout(() => {
           btn.style.filter = '';
           btn.style.pointerEvents = '';
@@ -1567,7 +1096,7 @@
     let isTabMode = false;
     let recentNicknames = JSON.parse(localStorage.getItem('lol-tracker-recent-names') || '[]');
 
-    let dianaEasterEggTriggered = false;
+
 
     // ====================== FUNCIONES DE TRADUCCIÓN ======================
     function t(key) {
@@ -1575,7 +1104,7 @@
     }
 
     function getRandomChampion() {
-      return champions[Math.floor(Math.random() * champions.length)];
+      return ChampionManager.getRandomChampion();
     }
 
     function updateTexts() {
@@ -1647,6 +1176,10 @@
     }
 
     // ====================== VALIDACIÓN ======================
+    function validateNicknameRealTime(nickname) {
+      return ValidationManager.validateRealTime(nickname, elements.nicknameInput);
+    }
+
     function validateNickname(nickname, isUsingRandomName = false) {
       // Skip all validations during Diana easter egg
       if (dianaEffectsActive && (nickname === 'Diana, Scorn of the Moon' || nickname === 'Diana, El desdén de la Luna')) {
@@ -1674,10 +1207,8 @@
       }
       
       // Check if nickname is a champion name (only when champion icon is selected)
-      const selectedChampion = localStorage.getItem('selected-champion');
-      const isChampionName = champions.some(champion => 
-        champion.toLowerCase() === nickname.trim().toLowerCase()
-      );
+      const selectedChampion = localStorage.getItem(CONFIG.STORAGE_KEYS.SELECTED_CHAMPION);
+      const isChampionName = ChampionManager.validateChampionName(nickname.trim());
       
       if (isChampionName && selectedChampion && selectedChampion.toLowerCase() !== nickname.trim().toLowerCase()) {
         showError(currentLang === 'es' ? 'No puedes usar nombres de campeones como tu nombre' : 'You cannot use champion names as your nickname');
@@ -1804,11 +1335,7 @@
     // ====================== GESTIÓN DE VENTANAS ======================
     function getWindowSize() {
       const size = elements.windowSize.value;
-      switch (size) {
-        case 'small': return { width: 450, height: 725 };
-        case 'large': return { width: 550, height: 900 };
-        default: return { width: 450, height: 775 };
-      }
+      return CONFIG.WINDOW_SIZES[size] || CONFIG.WINDOW_SIZES.medium;
     }
 
     function abrirEnVentana(url) {
@@ -1869,8 +1396,8 @@
         theme: document.body.classList.contains('light-theme') ? 'light' : 'dark',
         lang: currentLang,
         diana: dianaEffectsActive,
-        champion: selectedChampion,
-        color: localStorage.getItem('user-color')
+        champion: dianaEffectsActive ? 'Diana' : selectedChampion,
+        color: dianaEffectsActive ? 'linear-gradient(45deg, #ffffff, #87ceeb)' : localStorage.getItem('user-color')
       };
       
       sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(config));
@@ -1894,11 +1421,10 @@
     function addToRecentNames(name) {
       if (!name || name.length < 2) return;
       
-      // No añadir nombres de campeones a las sugerencias
-      const isChampionName = champions.some(champion => 
-        champion.toLowerCase() === name.toLowerCase()
-      );
-      if (isChampionName) return;
+      // No añadir nombres de campeones o Diana a las sugerencias
+      const isChampionName = ChampionManager.validateChampionName(name);
+      const isDianaName = name === 'Diana, Scorn of the Moon' || name === 'Diana, El desdén de la Luna';
+      if (isChampionName || isDianaName) return;
       
       recentNicknames = recentNicknames.filter(n => n.toLowerCase() !== name.toLowerCase());
       recentNicknames.unshift(name);
@@ -1985,20 +1511,26 @@
 
     function setupEventListeners() {
       elements.nicknameInput.addEventListener('input', (e) => {
-        elements.nicknameError.classList.remove('show');
-        elements.nicknameInput.classList.remove('error');
+        const nickname = e.target.value;
         
-        // No easter egg al escribir manualmente
-        document.body.classList.remove('diana-mode');
-        dianaEasterEggTriggered = false;
-
+        // Real-time validation
+        validateNicknameRealTime(nickname);
+        
+        // Clear error messages
+        elements.nicknameError.classList.remove('show');
+        
+        // No easter egg al escribir manualmente (solo si no es Diana activo)
+        if (!dianaEffectsActive) {
+          document.body.classList.remove('diana-mode');
+        }
       });
       
 
 
       elements.nicknameInput.addEventListener('blur', (e) => {
         const val = e.target.value.trim();
-        if (val) {
+        const isDianaName = val === 'Diana, Scorn of the Moon' || val === 'Diana, El desdén de la Luna';
+        if (val && !dianaEffectsActive && !isDianaName) {
           localStorage.setItem('lol-tracker-nickname', val);
         }
       });
@@ -2050,31 +1582,45 @@
         }
       });
 
-      elements.createRoomBtn.addEventListener('click', () => launchApp('host'));
-      
-      const championButton = document.getElementById('championButton');
-      championButton.addEventListener('click', () => {
-        championButton.style.transform = 'scale(0.9)';
-        setTimeout(() => {
-          championButton.style.transform = 'scale(1)';
-        }, 100);
-      });
-      elements.joinRoomBtn.addEventListener('click', () => launchApp('join'));
-      elements.soloBtn.addEventListener('click', () => launchApp('solo'));
-
-      elements.rememberChoice.addEventListener('change', () => {
-        localStorage.setItem('remember-choice', elements.rememberChoice.checked);
-        if (!elements.rememberChoice.checked) {
-          localStorage.removeItem('preferred-role');
+      // Event delegation para botones
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('#createRoomBtn')) {
+          launchApp('host');
+        }
+        if (e.target.closest('#joinRoomBtn')) {
+          launchApp('join');
+        }
+        if (e.target.closest('#soloBtn')) {
+          launchApp('solo');
+        }
+        if (e.target.closest('#championButton')) {
+          const btn = e.target.closest('#championButton');
+          btn.style.transform = 'scale(0.9)';
+          setTimeout(() => {
+            btn.style.transform = 'scale(1)';
+          }, 100);
+        }
+        if (e.target.closest('.role-card')) {
+          const card = e.target.closest('.role-card');
+          const role = card.querySelector('input[name="role"]')?.value;
+          if (role) selectRole(role);
         }
       });
 
-      elements.autoFocus.addEventListener('change', () => {
-        localStorage.setItem('auto-focus', elements.autoFocus.checked);
-      });
-
-      elements.windowSize.addEventListener('change', () => {
-        localStorage.setItem('window-size', elements.windowSize.value);
+      // Event delegation para configuración
+      document.addEventListener('change', (e) => {
+        if (e.target.matches('#rememberChoice')) {
+          localStorage.setItem('remember-choice', e.target.checked);
+          if (!e.target.checked) {
+            localStorage.removeItem('preferred-role');
+          }
+        }
+        if (e.target.matches('#autoFocus')) {
+          localStorage.setItem('auto-focus', e.target.checked);
+        }
+        if (e.target.matches('#windowSize')) {
+          localStorage.setItem('window-size', e.target.value);
+        }
       });
 
       // Champion Icon functionality
@@ -2085,9 +1631,7 @@
 
       function updateChampionList(filter = '') {
         championList.innerHTML = '';
-        const filtered = champions.filter(champ => 
-          champ.toLowerCase().includes(filter.toLowerCase())
-        ).slice(0, 10);
+        const filtered = ChampionManager.filterChampions(filter);
         
         filtered.forEach(champ => {
           const option = document.createElement('option');
@@ -2096,30 +1640,13 @@
         });
       }
 
-      function getChampionFileName(championName) {
-        // Special cases first
-        const specialCases = {
-          "Dr. Mundo": "Dr_Mundo",
-          "Nunu": "Nunu_&_Willump"
-        };
-        
-        if (specialCases[championName]) {
-          return specialCases[championName];
-        }
-        
-        // Keep straight apostrophes as they are in file names
-        let fileName = championName
-          .replace(/ /g, "_")   // spaces to underscores
-          .replace(/\./g, "_"); // dots to underscores
-        
-        return fileName;
-      }
+      // Function moved to ChampionManager.js
 
       function updateChampionPreview(championName) {
         const championButton = document.getElementById('championButton');
         
-        if (championName && champions.includes(championName)) {
-          const fileName = getChampionFileName(championName);
+        if (championName && ChampionManager.validateChampionName(championName)) {
+          const fileName = ChampionManager.getChampionFileName(championName);
           const fullPath = `./Champions_assets/${fileName}.png`;
           
           championPreview.src = fullPath;
@@ -2137,14 +1664,12 @@
           
           // Clear username if it's a different champion name
           const currentName = elements.nicknameInput.value.trim();
-          const isChampionName = champions.some(champion => 
-            champion.toLowerCase() === currentName.toLowerCase()
-          );
+          const isChampionName = ChampionManager.validateChampionName(currentName);
           if (isChampionName && currentName.toLowerCase() !== championName.toLowerCase()) {
             elements.nicknameInput.value = '';
           }
           
-          if (!dianaEffectsActive || championName !== 'Diana') {
+          if (!dianaEffectsActive) {
             localStorage.setItem('selected-champion', championName);
           }
         } else {
@@ -2169,12 +1694,12 @@
         const value = e.target.value;
         updateChampionList(value);
         
-        const exactMatch = champions.find(champ => 
+        const exactMatch = ChampionManager.champions.find(champ => 
           champ.toLowerCase() === value.toLowerCase()
         );
         
-        // Don't save Diana during easter egg
-        if (dianaEffectsActive && exactMatch === 'Diana') {
+        // Don't save anything during easter egg
+        if (dianaEffectsActive) {
           return;
         }
         
@@ -2228,7 +1753,7 @@
       colorPicker.addEventListener('input', (e) => {
         const selectedColor = e.target.value;
         updateColorPreview(selectedColor);
-        if (!dianaEffectsActive || selectedColor !== 'linear-gradient(45deg, #ffffff, #87ceeb)') {
+        if (!dianaEffectsActive) {
           localStorage.setItem('user-color', selectedColor);
         }
         userColorSelect.value = ''; // Reset selector
@@ -2264,9 +1789,14 @@
           displayName = match ? match[1] : 'Player';
         }
         
+        // Override with Diana name during easter egg
+        if (dianaEffectsActive) {
+          displayName = currentLang === 'es' ? 'Diana, El desdén de la Luna' : 'Diana, Scorn of the Moon';
+        }
+        
         // Get current champion and color (use temporary Diana settings if active)
-        const selectedChampion = dianaEffectsActive ? (window.tempDianaChampion || localStorage.getItem('selected-champion')) : localStorage.getItem('selected-champion');
-        const selectedColor = dianaEffectsActive ? (window.tempDianaColor || localStorage.getItem('user-color')) : localStorage.getItem('user-color');
+        const selectedChampion = dianaEffectsActive ? 'Diana' : localStorage.getItem('selected-champion');
+        const selectedColor = dianaEffectsActive ? 'linear-gradient(45deg, #ffffff, #87ceeb)' : localStorage.getItem('user-color');
         
         // Update both previews
         [previewContainer, previewTop].forEach(container => {
@@ -2277,7 +1807,7 @@
           
           // Add champion icon if selected
           if (selectedChampion) {
-            const fileName = getChampionFileName(selectedChampion);
+            const fileName = ChampionManager.getChampionFileName(selectedChampion);
             const championImg = document.createElement('img');
             championImg.src = `./Champions_assets/${fileName}.png`;
             championImg.style.cssText = container === previewTop ? 
@@ -2295,6 +1825,7 @@
             nameSpan.style.webkitBackgroundClip = 'text';
             nameSpan.style.webkitTextFillColor = 'transparent';
             nameSpan.style.backgroundClip = 'text';
+            nameSpan.style.display = 'inline-block';
           } else {
             nameSpan.style.color = selectedColor || 'var(--text-primary)';
           }
@@ -2303,7 +1834,6 @@
       }
       
       // Update preview on changes
-      elements.nicknameInput.addEventListener('input', updatePreview);
       userColorSelect.addEventListener('change', updatePreview);
       championInput.addEventListener('input', updatePreview);
       

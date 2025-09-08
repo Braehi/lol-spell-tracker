@@ -942,6 +942,7 @@
     const dianaMode = launchConfig.diana === true;
     const userChampion = launchConfig.champion;
     const userColor = launchConfig.color;
+    const isDianaMode = launchConfig.diana === true;
 
     let isHost = userRole === 'host';
     let isSoloMode = userRole === 'solo';
@@ -979,7 +980,7 @@
 
     function sanitizeNickname(nick) {
       if (typeof nick !== 'string') return 'Player';
-      return nick.replace(/[<>"'&]/g, '').substring(0, 20).trim() || 'Player';
+      return nick.replace(/[<>"'&]/g, '').trim() || 'Player';
     }
 
     function validateEventData(data) {
@@ -2190,9 +2191,17 @@
               if (otherConn !== conn && otherConn.open) {
                 try {
                   otherConn.send({ a: 'playerJoined', playerId: data.from, nick: sanitizedNick, champion: data.champion, color: data.color });
+                  // Send existing players info to new connection
+                  const existingPlayer = connectedPlayers.get(otherConn.peer);
+                  if (existingPlayer) {
+                    conn.send({ a: 'playerJoined', playerId: otherConn.peer, nick: existingPlayer.nick, champion: existingPlayer.champion, color: existingPlayer.color });
+                  }
                 } catch (e) {}
               }
             });
+            
+            // Send host info to new player
+            conn.send({ a: 'playerJoined', playerId: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
           } else if (data.a === 'hostInfo') {
             hostNickname = sanitizeNickname(data.nick);
           } else if (data.a === 'pong') {
@@ -3249,13 +3258,34 @@
           championImg = `<img src="./Champions_assets/${fileName}.png" style="width: 16px; height: 16px; border-radius: 2px; margin-right: 4px; vertical-align: middle;" onerror="this.style.display='none'">`;
         }
         
-        // Apply user color
-        const userColorToShow = p.isSelf ? userColor : p.color;
-        const colorStyle = userColorToShow ? `color: ${userColorToShow};` : '';
+        // Apply user color with gradient support
+        let userColorToShow = p.isSelf ? userColor : p.color;
         
-        let name = p.isSelf
-          ? `${championImg}<strong style="color:#4caf50; ${colorStyle}">${escapeHtml(p.nick)}</strong>`
-          : `${championImg}<span style="${colorStyle}">${escapeHtml(p.nick)}</span>`;
+        // Diana easter egg override - check for Diana names
+        const isDianaName = p.nick === 'Diana, Scorn of the Moon' || p.nick === 'Diana, El desdén de la Luna';
+        if (isDianaName) {
+          userColorToShow = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        }
+        
+        let colorStyle = '';
+        if (userColorToShow) {
+          if (userColorToShow.startsWith('linear-gradient')) {
+            colorStyle = `background: ${userColorToShow}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; display: inline-block;`;
+          } else {
+            colorStyle = `color: ${userColorToShow};`;
+          }
+        }
+        
+        let name;
+        if (p.isSelf) {
+          if (userColorToShow && userColorToShow.startsWith('linear-gradient')) {
+            name = `${championImg}<strong style="${colorStyle}">${escapeHtml(p.nick)}</strong>`;
+          } else {
+            name = `${championImg}<strong style="color:#4caf50; ${colorStyle}">${escapeHtml(p.nick)}</strong>`;
+          }
+        } else {
+          name = `${championImg}<span style="${colorStyle}">${escapeHtml(p.nick)}</span>`;
+        }
         
         if ((isHost && p.isSelf) || (!isHost && p.nick === hostNickname)) {
           name += ' 👑';
@@ -3592,7 +3622,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.0 - 8/9/25 - Github update
+    Lol Spell Tracker v0.2.1 - 8/9/25 - modularización, optimizacion css, fixes visuales, fixes easter-egg
   </div>
 
   <button class="tutorial-toggle" id="tutorialToggle">
