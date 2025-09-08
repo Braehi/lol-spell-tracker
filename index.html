@@ -1,0 +1,2447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LoL Flash Tracker - Launcher</title>
+  <link rel="icon" href="./images/Flash.png" type="image/png" />
+  
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #1a1a1a;
+      --bg-tertiary: #2a2a2a;
+      --bg-card: #1e1e1e;
+      --bg-card-hover: #2a2a2a;
+      --bg-card-selected: #2d2d44;
+      --accent-primary: #bb86fc;
+      --accent-secondary: #03dac6;
+      --text-primary: #ffffff;
+      --text-secondary: #e0e0e0;
+      --text-muted: #aaa;
+      --border: #333;
+      --border-focus: #bb86fc;
+      --error: #ff5252;
+      --success: #4caf50;
+      --warning: #ff9800;
+      --shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+      --shadow-hover: 0 6px 16px rgba(187, 134, 252, 0.3);
+      --radius: 8px;
+      --radius-large: 14px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body.light-theme {
+      --bg-primary: #e8e8e8;
+      --bg-secondary: #f0f0f0;
+      --bg-tertiary: #d0d0d0;
+      --bg-card: #f0f0f0;
+      --bg-card-hover: #e0e0e0;
+      --bg-card-selected: #e3f2fd;
+      --accent-primary: #bb86fc;
+      --accent-secondary: #03dac6;
+      --text-primary: #212121;
+      --text-secondary: #424242;
+      --text-muted: #757575;
+      --border: #d0d0d0;
+      --border-focus: #bb86fc;
+      --shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      --shadow-hover: 0 6px 16px rgba(187, 134, 252, 0.2);
+      background: var(--bg-primary);
+    }
+
+    body.light-theme .action-button.host {
+      background: linear-gradient(45deg, #7b1fa2, #9c27b0);
+      color: #ffffff;
+    }
+
+    body.light-theme .action-button.join {
+      background: linear-gradient(45deg, #2e7d32, #388e3c);
+      color: #ffffff;
+    }
+
+    body.light-theme .action-button.solo {
+      background: linear-gradient(45deg, #424242, #616161);
+      color: #ffffff;
+    }
+
+    body.light-theme #helpBtn {
+      background: white;
+      border-color: #d1d5db;
+      color: #6b7280;
+    }
+
+    body.light-theme #helpBtn.active {
+      background: #3b82f6 !important;
+      border-color: #2563eb !important;
+      color: white !important;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+    }
+
+    * { 
+      box-sizing: border-box;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    body {
+      font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1a2e 100%);
+      color: var(--text-secondary);
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      gap: 16px;
+      overflow-x: hidden;
+      transition: background 1s ease;
+    }
+
+    body.diana-mode {
+      background: linear-gradient(135deg, rgba(10, 10, 10, 0.8) 0%, rgba(26, 26, 46, 0.8) 100%), url('./Champions_assets/Diana_0.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    /* Indicador de estado */
+    .status-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font-size: 0.8rem;
+      z-index: 1000;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.warning { background: var(--warning); }
+    .status-dot.error { background: var(--error); }
+
+    /* Switch de idioma */
+    .language-switch {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      font-size: 0.8rem;
+      z-index: 1000;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    .lang-label {
+      font-weight: 500;
+      color: var(--text-secondary);
+      min-width: 20px;
+      text-align: center;
+      transition: var(--transition);
+    }
+
+    .lang-label.active {
+      color: var(--accent-primary);
+    }
+
+    /* Icono de la app */
+    .app-icon {
+      width: 72px;
+      height: 72px;
+      margin-bottom: 16px;
+      border-radius: var(--radius-large);
+      box-shadow: var(--shadow);
+      animation: fadeInUp 0.8s ease-out;
+      transition: var(--transition);
+    }
+
+    .app-icon:hover {
+      transform: scale(1.1);
+      box-shadow: var(--shadow-hover);
+    }
+
+    /* Título */
+    h1 { 
+      font-size: 1.8rem; 
+      color: var(--accent-primary); 
+      margin: 0 0 8px 0; 
+      font-weight: 500; 
+      letter-spacing: 0.5px;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+      background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Contenedor principal */
+    .form-group { 
+      width: 100%; 
+      max-width: 320px; 
+      text-align: left; 
+      font-size: 0.9rem; 
+      color: var(--text-muted);
+      animation: fadeInUp 0.8s ease-out 0.4s both;
+    }
+
+    /* Caja de invitado - agrupa elementos más usados */
+    .guest-box {
+      background: var(--bg-card);
+      border: 2px solid var(--accent-primary);
+      border-radius: var(--radius-large);
+      padding: 20px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(187, 134, 252, 0.2);
+      transition: var(--transition), height 0.3s ease, padding 0.3s ease;
+    }
+
+    .guest-box.compact {
+      padding: 20px 20px 12px 20px;
+    }
+
+    .guest-box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    }
+
+
+
+    .guest-box .nickname-container {
+      margin-bottom: 20px;
+    }
+
+    .guest-box .role-card {
+      margin-bottom: 4px;
+      border-color: var(--accent-primary);
+      background: rgba(187, 134, 252, 0.05);
+    }
+
+    .guest-box .action-button {
+      margin-top: 0;
+    }
+
+    /* Separador visual */
+    .section-separator {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 24px 0;
+      position: relative;
+    }
+
+    .section-separator::after {
+      content: "⚡";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-primary);
+      padding: 0 8px;
+      font-size: 0.8rem;
+      color: var(--accent-primary);
+    }
+
+    /* Labels */
+    .form-group label { 
+      display: block; 
+      margin-bottom: 6px; 
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* Input de nickname */
+    .nickname-container {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .form-group input[type="text"] {
+      width: 100%; 
+      padding: 12px 16px; 
+      border-radius: var(--radius); 
+      border: 2px solid var(--border); 
+      background: var(--bg-card); 
+      color: var(--text-primary); 
+      font-family: inherit; 
+      font-size: 0.95rem;
+      transition: var(--transition);
+      outline: none;
+    }
+
+    .form-group input[type="text"]:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.1);
+      background: var(--bg-secondary);
+    }
+
+    .form-group input[type="text"].error {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.1);
+    }
+
+    .form-group input[type="text"].success {
+      border-color: var(--success);
+      box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+
+
+
+    /* Tarjetas de rol */
+    .role-card { 
+      background: var(--bg-card); 
+      border: 2px solid var(--border); 
+      border-radius: var(--radius); 
+      padding: 14px 16px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      cursor: pointer; 
+      transition: var(--transition);
+      margin-bottom: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .role-card:hover { 
+      background: var(--bg-card-hover); 
+      transform: translateY(-2px); 
+      box-shadow: var(--shadow-hover);
+      border-color: var(--accent-primary);
+    }
+
+    .role-card.selected { 
+      background: var(--bg-card-selected); 
+      border-color: var(--accent-primary); 
+      box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.3);
+    }
+
+    .role-card input { 
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+    }
+
+    .role-card-content { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+    }
+
+    .role-icon { 
+      width: 32px; 
+      height: 32px; 
+      background: var(--bg-tertiary); 
+      border-radius: 50%; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 1.2rem;
+      transition: var(--transition);
+    }
+
+    .role-card:hover .role-icon {
+      transform: scale(1.1);
+      background: var(--accent-primary);
+    }
+
+    /* Botones de acción */
+    .action-button { 
+      margin-top: 8px; 
+      padding: 14px 20px; 
+      font-size: 1rem; 
+      font-weight: 600; 
+      border: none; 
+      border-radius: var(--radius); 
+      cursor: pointer; 
+      box-shadow: var(--shadow); 
+      transition: var(--transition), opacity 0.3s ease, transform 0.3s ease, height 0.3s ease, margin 0.3s ease, visibility 0.3s ease; 
+      width: 100%; 
+      max-width: 320px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .action-button.host { 
+      background: linear-gradient(45deg, var(--accent-primary), #9c64d6);
+      color: var(--text-primary);
+    }
+
+    .action-button.join { 
+      background: linear-gradient(45deg, #4caf50, #2e7d32);
+      color: var(--text-primary);
+    }
+
+    .action-button.solo { 
+      background: linear-gradient(45deg, var(--text-muted), #666);
+      color: var(--text-primary);
+    }
+
+    .action-button:hover { 
+      filter: brightness(1.2);
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Switch de modo */
+    .mode-switch-container { 
+      width: 100%; 
+      max-width: 320px; 
+      margin: 20px 0 16px; 
+      font-size: 0.9rem; 
+      color: var(--text-muted);
+    }
+
+    .switch-wrapper { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: var(--bg-card); 
+      padding: 12px 16px; 
+      border-radius: var(--radius); 
+      border: 1px solid var(--border);
+      transition: var(--transition);
+    }
+
+    .switch-wrapper:hover {
+      border-color: var(--accent-primary);
+      background: var(--bg-card-hover);
+    }
+
+    .switch-label { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .switch { 
+      position: relative; 
+      display: inline-block; 
+      width: 56px; 
+      height: 28px;
+    }
+
+    .switch input { 
+      opacity: 0; 
+      width: 0; 
+      height: 0; 
+    }
+
+    .slider { 
+      position: absolute; 
+      cursor: pointer; 
+      top: 0; 
+      left: 0; 
+      right: 0; 
+      bottom: 0; 
+      background-color: var(--bg-tertiary); 
+      transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+      border-radius: 30px;
+      border: 2px solid var(--border);
+    }
+
+    .slider:before { 
+      position: absolute; 
+      content: ""; 
+      height: 20px; 
+      width: 20px; 
+      left: 2px; 
+      bottom: 2px; 
+      background-color: var(--text-primary); 
+      transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    input:checked + .slider { 
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+    }
+
+    input:checked + .slider:before { 
+      transform: translateX(26px); 
+    }
+
+    /* Configuración avanzada */
+    .advanced-settings {
+      width: 100%;
+      max-width: 320px;
+      margin-top: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .advanced-settings {
+      position: relative;
+    }
+
+    .advanced-settings summary {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-card);
+      transition: var(--transition);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #helpBtn:hover {
+      opacity: 1;
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      background: rgba(187, 134, 252, 0.1);
+    }
+
+    #helpBtn:active {
+      transform: scale(0.95);
+    }
+
+    #helpBtn.active {
+      background: #3b82f6 !important;
+      color: white !important;
+      border-color: #2563eb !important;
+      opacity: 1;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+    }
+
+    #helpBtn.active:hover {
+      background: #2563eb !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4) !important;
+    }
+
+    .advanced-settings summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .advanced-settings summary::before {
+      content: '⚙️';
+      transition: transform 0.3s;
+    }
+
+    .advanced-settings[open] summary::before {
+      transform: rotate(90deg);
+    }
+
+    .advanced-settings summary:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .settings-panel {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+      overflow: visible;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.4s ease;
+    }
+
+    .advanced-settings[open] .settings-panel {
+      max-height: 900px;
+      opacity: 1;
+    }
+
+    .settings-panel label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .settings-panel input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-primary);
+    }
+
+    .settings-panel select {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: inherit;
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      border-left: 4px solid var(--accent-primary);
+      box-shadow: var(--shadow);
+      z-index: 10000;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.toast-error {
+      border-left-color: var(--error);
+      background: rgba(255, 82, 82, 0.1);
+    }
+
+    .toast.toast-success {
+      border-left-color: var(--success);
+      background: rgba(76, 175, 80, 0.1);
+    }
+
+    .toast.toast-warning {
+      border-left-color: var(--warning);
+      background: rgba(255, 152, 0, 0.1);
+    }
+
+    /* Error message */
+    .error-message {
+      color: var(--error);
+      font-size: 0.8rem;
+      margin-top: 4px;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .error-message.show {
+      max-height: 50px;
+      opacity: 1;
+    }
+
+    .version-footer {
+      margin-top: 8px;
+      margin-bottom: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      opacity: 0.6;
+      letter-spacing: 0.5px;
+      font-family: 'Courier New', monospace;
+      width: 100%;
+      max-width: 320px;
+      padding: 6px 0;
+      border-top: 1px solid var(--border);
+      transition: opacity 0.3s, color 0.3s;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .autocomplete-dropdown {
+        width: 180px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 15px;
+        gap: 12px;
+      }
+
+      .action-button { 
+        font-size: 0.95rem; 
+        padding: 12px 16px; 
+        gap: 8px; 
+      }
+
+      h1 { 
+        font-size: 1.6rem; 
+      }
+
+      .app-icon { 
+        width: 56px; 
+        height: 56px; 
+      }
+
+      .form-group input[type="text"] { 
+        font-size: 0.9rem; 
+        padding: 10px 14px;
+      }
+
+      .role-card {
+        padding: 12px 14px;
+      }
+
+      .status-indicator {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 10px;
+      }
+
+      .language-switch {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-bottom: 10px;
+      }
+
+      .guest-box {
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      .autocomplete-dropdown {
+        top: 100%;
+        left: 0;
+        right: 0;
+        width: auto;
+        border-radius: 0 0 var(--radius) var(--radius);
+      }
+
+      .autocomplete-dropdown::before,
+      .autocomplete-dropdown::after {
+        display: none;
+      }
+    }
+  </style>
+  
+  <!-- Pre-carga de recursos -->
+  <link rel="preload" href="./images/Bottom_icon.png" as="image">
+  <link rel="preload" href="./images/Diana_0.jpg" as="image">
+  <link rel="preload" href="./images/Diana.png" as="image">
+  <link rel="preload" href="./images/Flash.png" as="image">
+  <link rel="preload" href="./images/Jungle_icon.png" as="image">
+  <link rel="preload" href="./images/Middle_icon.png" as="image">
+  <link rel="preload" href="./images/SummonerBarrier.png" as="image">
+  <link rel="preload" href="./images/SummonerBoost.png" as="image">
+  <link rel="preload" href="./images/SummonerDot.png" as="image">
+  <link rel="preload" href="./images/SummonerExhaust.png" as="image">
+  <link rel="preload" href="./images/SummonerHaste.png" as="image">
+  <link rel="preload" href="./images/SummonerHeal.png" as="image">
+  <link rel="preload" href="./images/SummonerTeleport.png" as="image">
+  <link rel="preload" href="./images/Support_icon.png" as="image">
+  <link rel="preload" href="./images/Top_icon.png" as="image">
+  <link rel="preload" href="./sound/Diana_Select.ogg" as="audio">
+  <!-- Champion images preload -->
+  <link rel="preload" href="./Champions_assets/Aatrox.png" as="image">
+  <link rel="preload" href="./Champions_assets/Ahri.png" as="image">
+  <link rel="preload" href="./Champions_assets/Akali.png" as="image">
+  <link rel="preload" href="./Champions_assets/Akshan.png" as="image">
+  <link rel="preload" href="./Champions_assets/Alistar.png" as="image">
+  <link rel="preload" href="./Champions_assets/Amumu.png" as="image">
+  <link rel="preload" href="./Champions_assets/Anivia.png" as="image">
+  <link rel="preload" href="./Champions_assets/Annie.png" as="image">
+  <link rel="preload" href="./Champions_assets/Aphelios.png" as="image">
+  <link rel="preload" href="./Champions_assets/Ashe.png" as="image">
+  <link rel="preload" href="./Champions_assets/Aurelion_Sol.png" as="image">
+  <link rel="preload" href="./Champions_assets/Azir.png" as="image">
+  <link rel="preload" href="./Champions_assets/Bard.png" as="image">
+  <link rel="preload" href="./Champions_assets/Bel'Veth.png" as="image">
+  <link rel="preload" href="./Champions_assets/Blitzcrank.png" as="image">
+  <link rel="preload" href="./Champions_assets/Brand.png" as="image">
+  <link rel="preload" href="./Champions_assets/Braum.png" as="image">
+  <link rel="preload" href="./Champions_assets/Briar.png" as="image">
+  <link rel="preload" href="./Champions_assets/Caitlyn.png" as="image">
+  <link rel="preload" href="./Champions_assets/Camille.png" as="image">
+  <link rel="preload" href="./Champions_assets/Cassiopeia.png" as="image">
+  <link rel="preload" href="./Champions_assets/Cho'Gath.png" as="image">
+  <link rel="preload" href="./Champions_assets/Corki.png" as="image">
+  <link rel="preload" href="./Champions_assets/Darius.png" as="image">
+  <link rel="preload" href="./Champions_assets/Diana.png" as="image">
+  <link rel="preload" href="./Champions_assets/Dr_Mundo.png" as="image">
+  <link rel="preload" href="./Champions_assets/Draven.png" as="image">
+  <link rel="preload" href="./Champions_assets/Ekko.png" as="image">
+  <link rel="preload" href="./Champions_assets/Elise.png" as="image">
+  <link rel="preload" href="./Champions_assets/Evelynn.png" as="image">
+  <link rel="preload" href="./Champions_assets/Ezreal.png" as="image">
+  <link rel="preload" href="./Champions_assets/Fiddlesticks.png" as="image">
+  <link rel="preload" href="./Champions_assets/Fiora.png" as="image">
+  <link rel="preload" href="./Champions_assets/Fizz.png" as="image">
+  <link rel="preload" href="./Champions_assets/Galio.png" as="image">
+  <link rel="preload" href="./Champions_assets/Gangplank.png" as="image">
+  <link rel="preload" href="./Champions_assets/Garen.png" as="image">
+  <link rel="preload" href="./Champions_assets/Gnar.png" as="image">
+  <link rel="preload" href="./Champions_assets/Gragas.png" as="image">
+  <link rel="preload" href="./Champions_assets/Graves.png" as="image">
+  <link rel="preload" href="./Champions_assets/Gwen.png" as="image">
+  <link rel="preload" href="./Champions_assets/Hecarim.png" as="image">
+  <link rel="preload" href="./Champions_assets/Heimerdinger.png" as="image">
+  <link rel="preload" href="./Champions_assets/Hwei.png" as="image">
+  <link rel="preload" href="./Champions_assets/Illaoi.png" as="image">
+  <link rel="preload" href="./Champions_assets/Irelia.png" as="image">
+  <link rel="preload" href="./Champions_assets/Ivern.png" as="image">
+  <link rel="preload" href="./Champions_assets/Janna.png" as="image">
+  <link rel="preload" href="./Champions_assets/Jarvan_IV.png" as="image">
+  <link rel="preload" href="./Champions_assets/Jax.png" as="image">
+  <link rel="preload" href="./Champions_assets/Jayce.png" as="image">
+  <link rel="preload" href="./Champions_assets/Jhin.png" as="image">
+  <link rel="preload" href="./Champions_assets/Jinx.png" as="image">
+  <link rel="preload" href="./Champions_assets/K'Sante.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kai'Sa.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kalista.png" as="image">
+  <link rel="preload" href="./Champions_assets/Karma.png" as="image">
+  <link rel="preload" href="./Champions_assets/Karthus.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kassadin.png" as="image">
+  <link rel="preload" href="./Champions_assets/Katarina.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kayle.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kayn.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kennen.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kha'Zix.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kindred.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kled.png" as="image">
+  <link rel="preload" href="./Champions_assets/Kog'Maw.png" as="image">
+  <link rel="preload" href="./Champions_assets/LeBlanc.png" as="image">
+  <link rel="preload" href="./Champions_assets/Lee_Sin.png" as="image">
+  <link rel="preload" href="./Champions_assets/Leona.png" as="image">
+  <link rel="preload" href="./Champions_assets/Lillia.png" as="image">
+  <link rel="preload" href="./Champions_assets/Lissandra.png" as="image">
+  <link rel="preload" href="./Champions_assets/Lucian.png" as="image">
+  <link rel="preload" href="./Champions_assets/Lulu.png" as="image">
+  <link rel="preload" href="./Champions_assets/Lux.png" as="image">
+  <link rel="preload" href="./Champions_assets/Malphite.png" as="image">
+  <link rel="preload" href="./Champions_assets/Malzahar.png" as="image">
+  <link rel="preload" href="./Champions_assets/Maokai.png" as="image">
+  <link rel="preload" href="./Champions_assets/Master_Yi.png" as="image">
+  <link rel="preload" href="./Champions_assets/Milio.png" as="image">
+  <link rel="preload" href="./Champions_assets/Miss_Fortune.png" as="image">
+  <link rel="preload" href="./Champions_assets/Mordekaiser.png" as="image">
+  <link rel="preload" href="./Champions_assets/Morgana.png" as="image">
+  <link rel="preload" href="./Champions_assets/Naafiri.png" as="image">
+  <link rel="preload" href="./Champions_assets/Nami.png" as="image">
+  <link rel="preload" href="./Champions_assets/Nasus.png" as="image">
+  <link rel="preload" href="./Champions_assets/Nautilus.png" as="image">
+  <link rel="preload" href="./Champions_assets/Neeko.png" as="image">
+  <link rel="preload" href="./Champions_assets/Nidalee.png" as="image">
+  <link rel="preload" href="./Champions_assets/Nilah.png" as="image">
+  <link rel="preload" href="./Champions_assets/Nocturne.png" as="image">
+  <link rel="preload" href="./Champions_assets/Nunu_&_Willump.png" as="image">
+  <link rel="preload" href="./Champions_assets/Olaf.png" as="image">
+  <link rel="preload" href="./Champions_assets/Orianna.png" as="image">
+  <link rel="preload" href="./Champions_assets/Ornn.png" as="image">
+  <link rel="preload" href="./Champions_assets/Pantheon.png" as="image">
+  <link rel="preload" href="./Champions_assets/Poppy.png" as="image">
+  <link rel="preload" href="./Champions_assets/Pyke.png" as="image">
+  <link rel="preload" href="./Champions_assets/Qiyana.png" as="image">
+  <link rel="preload" href="./Champions_assets/Quinn.png" as="image">
+  <link rel="preload" href="./Champions_assets/Rakan.png" as="image">
+  <link rel="preload" href="./Champions_assets/Rammus.png" as="image">
+  <link rel="preload" href="./Champions_assets/Rek'Sai.png" as="image">
+  <link rel="preload" href="./Champions_assets/Rell.png" as="image">
+  <link rel="preload" href="./Champions_assets/Renata_Glasc.png" as="image">
+  <link rel="preload" href="./Champions_assets/Renekton.png" as="image">
+  <link rel="preload" href="./Champions_assets/Rengar.png" as="image">
+  <link rel="preload" href="./Champions_assets/Riven.png" as="image">
+  <link rel="preload" href="./Champions_assets/Rumble.png" as="image">
+  <link rel="preload" href="./Champions_assets/Ryze.png" as="image">
+  <link rel="preload" href="./Champions_assets/Samira.png" as="image">
+  <link rel="preload" href="./Champions_assets/Sejuani.png" as="image">
+  <link rel="preload" href="./Champions_assets/Senna.png" as="image">
+  <link rel="preload" href="./Champions_assets/Seraphine.png" as="image">
+  <link rel="preload" href="./Champions_assets/Sett.png" as="image">
+  <link rel="preload" href="./Champions_assets/Shaco.png" as="image">
+  <link rel="preload" href="./Champions_assets/Shen.png" as="image">
+  <link rel="preload" href="./Champions_assets/Shyvana.png" as="image">
+  <link rel="preload" href="./Champions_assets/Singed.png" as="image">
+  <link rel="preload" href="./Champions_assets/Sion.png" as="image">
+  <link rel="preload" href="./Champions_assets/Sivir.png" as="image">
+  <link rel="preload" href="./Champions_assets/Skarner.png" as="image">
+  <link rel="preload" href="./Champions_assets/Smolder.png" as="image">
+  <link rel="preload" href="./Champions_assets/Sona.png" as="image">
+  <link rel="preload" href="./Champions_assets/Soraka.png" as="image">
+  <link rel="preload" href="./Champions_assets/Swain.png" as="image">
+  <link rel="preload" href="./Champions_assets/Sylas.png" as="image">
+  <link rel="preload" href="./Champions_assets/Syndra.png" as="image">
+  <link rel="preload" href="./Champions_assets/Tahm_Kench.png" as="image">
+  <link rel="preload" href="./Champions_assets/Taliyah.png" as="image">
+  <link rel="preload" href="./Champions_assets/Talon.png" as="image">
+  <link rel="preload" href="./Champions_assets/Taric.png" as="image">
+  <link rel="preload" href="./Champions_assets/Teemo.png" as="image">
+  <link rel="preload" href="./Champions_assets/Thresh.png" as="image">
+  <link rel="preload" href="./Champions_assets/Tristana.png" as="image">
+  <link rel="preload" href="./Champions_assets/Trundle.png" as="image">
+  <link rel="preload" href="./Champions_assets/Tryndamere.png" as="image">
+  <link rel="preload" href="./Champions_assets/Twisted_Fate.png" as="image">
+  <link rel="preload" href="./Champions_assets/Twitch.png" as="image">
+  <link rel="preload" href="./Champions_assets/Udyr.png" as="image">
+  <link rel="preload" href="./Champions_assets/Urgot.png" as="image">
+  <link rel="preload" href="./Champions_assets/Varus.png" as="image">
+  <link rel="preload" href="./Champions_assets/Vayne.png" as="image">
+  <link rel="preload" href="./Champions_assets/Veigar.png" as="image">
+  <link rel="preload" href="./Champions_assets/Vel'Koz.png" as="image">
+  <link rel="preload" href="./Champions_assets/Vex.png" as="image">
+  <link rel="preload" href="./Champions_assets/Vi.png" as="image">
+  <link rel="preload" href="./Champions_assets/Viego.png" as="image">
+  <link rel="preload" href="./Champions_assets/Viktor.png" as="image">
+  <link rel="preload" href="./Champions_assets/Vladimir.png" as="image">
+  <link rel="preload" href="./Champions_assets/Volibear.png" as="image">
+  <link rel="preload" href="./Champions_assets/Warwick.png" as="image">
+  <link rel="preload" href="./Champions_assets/Wukong.png" as="image">
+  <link rel="preload" href="./Champions_assets/Xayah.png" as="image">
+  <link rel="preload" href="./Champions_assets/Xerath.png" as="image">
+  <link rel="preload" href="./Champions_assets/Xin_Zhao.png" as="image">
+  <link rel="preload" href="./Champions_assets/Yasuo.png" as="image">
+  <link rel="preload" href="./Champions_assets/Yone.png" as="image">
+  <link rel="preload" href="./Champions_assets/Yorick.png" as="image">
+  <link rel="preload" href="./Champions_assets/Yuumi.png" as="image">
+  <link rel="preload" href="./Champions_assets/Zac.png" as="image">
+  <link rel="preload" href="./Champions_assets/Zed.png" as="image">
+  <link rel="preload" href="./Champions_assets/Zeri.png" as="image">
+  <link rel="preload" href="./Champions_assets/Ziggs.png" as="image">
+  <link rel="preload" href="./Champions_assets/Zilean.png" as="image">
+  <link rel="preload" href="./Champions_assets/Zoe.png" as="image">
+  <link rel="preload" href="./Champions_assets/Zyra.png" as="image">
+</head>
+<body>
+  <!-- Indicador de estado -->
+  <div class="status-indicator">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Ready</span>
+  </div>
+
+  <!-- Switch de idioma -->
+  <div class="language-switch">
+    <span class="lang-label active">🇺🇸 EN</span>
+    <label class="switch">
+      <input type="checkbox" id="langSwitch" />
+      <span class="slider"></span>
+    </label>
+    <span class="lang-label">🇪🇸 ES</span>
+  </div>
+
+  <!-- Switch de tema -->
+  <div class="language-switch" style="top: 70px;">
+    <span class="lang-label active" data-translate="dark">🌙 Dark</span>
+    <label class="switch">
+      <input type="checkbox" id="themeSwitch" />
+      <span class="slider"></span>
+    </label>
+    <span class="lang-label" data-translate="light">☀️ Light</span>
+  </div>
+
+  <!-- Icono de la aplicación -->
+  <img src="./images/Flash.png" alt="Flash Icon" class="app-icon" />
+  
+  <!-- Título -->
+  <h1>LoL Flash Tracker</h1>
+
+  <!-- Formulario principal -->
+  <div class="form-group">
+    <!-- Caja de invitado - elementos más usados -->
+    <div class="guest-box">
+      <!-- Input de nickname con autocompletado -->
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+        <label for="nickname" data-translate="yourName" style="margin: 0;">Your name</label>
+        <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); flex: 1;"></div>
+        <div id="userPreviewTop" style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; opacity: 0.8;"></div>
+      </div>
+      <div class="nickname-container" style="display: flex; gap: 8px; align-items: center;">
+        <div style="flex: 1; position: relative;">
+          <input type="text" 
+                 id="nickname" 
+                 placeholder="e.g: Ana" 
+                 maxlength="20" 
+                 autocomplete="off"
+                 data-translate-placeholder="placeholder" 
+                 list="recentNames" />
+          <datalist id="recentNames"></datalist>
+
+          <div class="error-message" id="nicknameError"></div>
+        </div>
+        <div id="championButton" 
+             style="width: 32px; height: 32px; padding: 8px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 1rem; transition: var(--transition); flex-shrink: 0; display: flex; align-items: center; justify-content: center;"
+             title="Random champion name"
+             onclick="randomizeName()">
+          🎲
+        </div>
+      </div>
+
+      <!-- Tarjeta: Unirse a sala -->
+      <div class="role-card" 
+           role="radio" 
+           aria-checked="true"
+           tabindex="0"
+           onclick="selectRole('join')" 
+           onkeydown="handleKeyDown(event, 'join')">
+        <div class="role-card-content">
+          <div class="role-icon">🚪</div>
+          <span data-translate="joinRoom">Join a room</span>
+        </div>
+        <input type="radio" name="role" value="join" id="role-join" checked />
+      </div>
+      
+      <!-- Botón unirse -->
+      <button id="joinRoomBtn" 
+              class="action-button join" 
+              aria-label="Join an existing room">
+        <span>🔗</span> 
+        <span data-translate="join">Join</span>
+      </button>
+      
+      <!-- Botón jugar solo -->
+      <button id="soloBtn" 
+              class="action-button solo" 
+              style="font-size: 0.8rem; padding: 8px 12px; margin-top: 8px;"
+              aria-label="Play solo">
+        <span>🎮</span> 
+        <span data-translate="playSolo">Jugar solo</span>
+      </button>
+    </div>
+
+    <!-- Tarjeta: Ser anfitrión -->
+    <div class="role-card" 
+         role="radio" 
+         aria-checked="false"
+         tabindex="0"
+         style="border-color: rgba(187, 134, 252, 0.3);"
+         onclick="selectRole('host')" 
+         onkeydown="handleKeyDown(event, 'host')">
+      <div class="role-card-content">
+        <div class="role-icon">👑</div>
+        <span data-translate="iAmHost">I am the host</span>
+      </div>
+      <input type="radio" name="role" value="host" id="role-host" />
+    </div>
+    
+    <!-- Botón crear sala -->
+    <button id="createRoomBtn" 
+            class="action-button host" 
+            style="display: none; opacity: 0;"
+            aria-label="Create a new room as host">
+      <span>🎮</span> 
+      <span data-translate="createRoom">Create room</span>
+    </button>
+
+    <!-- Separador visual -->
+    <div class="section-separator"></div>
+
+    <!-- Switch de modo -->
+    <div class="mode-switch-container">
+      <div class="switch-wrapper">
+        <div class="switch-label">
+          <span>🖥️</span> 
+          <span data-translate="window">Window</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="modeSwitch" aria-label="Switch between window and tab mode" />
+          <span class="slider"></span>
+        </label>
+        <div class="switch-label">
+          <span>🌐</span> 
+          <span data-translate="tab">Tab</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuración avanzada -->
+    <details class="advanced-settings" id="advancedSettings">
+      <summary data-translate="advancedSettings">Advanced settings</summary>
+      <button id="helpBtn" style="position: absolute; right: 16px; top: 12px; width: 22px; height: 22px; background: var(--bg-card); border: 2px solid var(--border); color: var(--text-muted); border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center; transition: all 0.3s ease; opacity: 0.7; z-index: 10;">i</button>
+      <div class="settings-panel">
+        <label>
+          <input type="checkbox" id="rememberChoice" checked> 
+          <span data-translate="rememberChoice">Remember my role choice</span>
+        </label>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpRemember" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpRemember">Automatically selects your last used role (host/guest) when opening the app.</div>
+        </div>
+        
+        <label>
+          <input type="checkbox" id="autoFocus" checked> 
+          <span data-translate="autoFocus">Auto-focus window</span>
+        </label>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpAutoFocus" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpAutoFocus">Brings the new window to the front when opened (may be blocked by browser security).</div>
+        </div>
+        
+
+        <label>
+          <span data-translate="windowSize">Window size:</span>
+          <select id="windowSize">
+            <option value="small" data-translate="small">Small (500×700)</option>
+            <option value="medium" selected data-translate="medium">Medium (500×800)</option>
+            <option value="large" data-translate="large">Large (600×1080)</option>
+          </select>
+        </label>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpWindowSize" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpWindowSize">Sets the dimensions of the tracker window. Only applies to window mode, not tabs.</div>
+        </div>
+        
+        <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 20px 0;"></div>
+        
+        <div id="userPreview" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 16px 0; font-size: 0.9rem;">
+          <span id="previewText" style="color: var(--text-primary);">Player</span>
+        </div>
+        
+        <label>
+          <span>✏️ <span data-translate="championIcon">Champion Icon:</span></span>
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <input type="text" id="championInput" placeholder="Type champion name..." style="flex: 1; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;" list="championList" autocomplete="off">
+          <datalist id="championList"></datalist>
+          <img id="championPreview" style="width: 32px; height: 32px; border-radius: 4px; border: 1px solid var(--border); display: none; object-fit: cover; flex-shrink: 0;" />
+          <button id="clearChampion" style="padding: 6px 10px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; transition: transform 0.1s ease;">None</button>
+        </div>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpChampionIcon" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpChampionIcon">Set a champion icon for others to see.</div>
+        </div>
+        
+        <label>
+          <span>🎨 <span data-translate="userColor">User Color:</span></span>
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <select id="userColor" style="flex: 0 0 140px; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;">
+            <option value="" data-translate="defaultColor">Default</option>
+            <option value="#ff6b6b" style="color: #ff6b6b;">🔴 Red</option>
+            <option value="#4ecdc4" style="color: #4ecdc4;">🟢 Green</option>
+            <option value="#45b7d1" style="color: #45b7d1;">🔵 Blue</option>
+            <option value="#f9ca24" style="color: #f9ca24;">🟡 Yellow</option>
+            <option value="#f0932b" style="color: #f0932b;">🟠 Orange</option>
+            <option value="#eb4d4b" style="color: #eb4d4b;">🔴 Crimson</option>
+            <option value="#6c5ce7" style="color: #6c5ce7;">🟣 Purple</option>
+            <option value="#a29bfe" style="color: #a29bfe;">🟣 Lavender</option>
+            <option value="#fd79a8" style="color: #fd79a8;">🩷 Pink</option>
+            <option value="#00b894" style="color: #00b894;">🟢 Teal</option>
+          </select>
+          <input type="color" id="colorPicker" value="#bb86fc" style="width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: none;">
+          <div id="colorPreview" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); background: var(--text-primary);"></div>
+          <button id="clearColor" style="padding: 4px 8px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.75rem; transition: transform 0.1s ease;">None</button>
+        </div>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpUserColor" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpUserColor">Choose a color for your name that others will see.</div>
+        </div>
+        
+        <button id="testDiana" style="width: 100%; padding: 8px 12px; background: #6c5ce7; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-top: 12px; font-size: 0.85rem;">🌙 Test Diana Easter Egg</button>
+        
+        <button id="clearAllData" style="width: 100%; padding: 8px 12px; background: var(--error); color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-top: 8px; font-size: 0.85rem;" data-translate="clearAllData">Clear all data</button>
+        <div style="position: relative;">
+          <div class="help-text" id="helpClearData" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpClearData">Removes all saved preferences, nicknames, and settings. Resets the app to first-time use.</div>
+        </div>
+      </div>
+    </details>
+    
+    <!-- Version footer -->
+    <div class="version-footer">
+      Lol Spell Tracker v0.1.8 - 8/9/25
+    </div>
+  </div>
+
+  <script>
+    // ====================== TRADUCCIONES ======================
+    const translations = {
+      en: {
+        ready: "Ready",
+        yourName: "Your name",
+        placeholder: "e.g: Champion",
+        joinRoom: "Join / Solo",
+        join: "Join",
+        window: "Window",
+        tab: "Tab",
+        iAmHost: "I am the host",
+        createRoom: "Create room",
+        advancedSettings: "Advanced settings",
+        rememberChoice: "Remember my role choice",
+        autoFocus: "Auto-focus window",
+        windowSize: "Window size:",
+        small: "Small (450×725)",
+        medium: "Medium (450×775)",
+        large: "Large (550×900)",
+        modeChanged: "Mode changed to:",
+        nameRequired: "Name must be at least 2 characters",
+        nameTooLong: "Name cannot be more than 20 characters",
+        invalidChars: "Only letters, numbers and spaces allowed",
+        windowOpened: "Window opened successfully!",
+        tabOpened: "Tab opened as",
+        host: "host",
+        guest: "guest",
+        windowError: "❌ Could not open window. Check popup blocker settings.",
+        tabError: "❌ Could not open tab. Check browser settings.",
+        readyToUse: "Ready to use",
+        playSolo: "Play solo",
+        dianaText: "A new moon is rising",
+        followLunari: "Follow the Lunari",
+        fightSolari: "Fight the Solari",
+        dark: "Dark",
+        light: "Light",
+        clearAllData: "Clear all data",
+        helpRemember: "Automatically selects your last used role (host/guest) when opening the app.",
+        helpAutoFocus: "Brings the new window to the front when opened (may be blocked by browser security).",
+        helpWindowSize: "Sets the dimensions of the tracker window. Only applies to window mode, not tabs.",
+        helpClearData: "Removes all saved preferences, nicknames, and settings. Resets the app to first-time use.",
+        championIcon: "Champion Icon",
+        helpChampionIcon: "Set a champion icon for others to see.",
+        userColor: "User Color",
+        helpUserColor: "Choose a color for your name that others will see.",
+
+        defaultColor: "Default"
+      },
+      es: {
+        ready: "Listo",
+        yourName: "Tu nombre",
+        placeholder: "Ej: Campeón",
+        joinRoom: "Unirse / Solo",
+        join: "Unirse",
+        window: "Ventana",
+        tab: "Pestaña",
+        iAmHost: "Soy el anfitrión",
+        createRoom: "Crear sala",
+        advancedSettings: "Configuración avanzada",
+        rememberChoice: "Recordar mi elección de rol",
+        autoFocus: "Enfocar automáticamente la ventana",
+        windowSize: "Tamaño de ventana:",
+        small: "Pequeña (450×725)",
+        medium: "Mediana (450×775)",
+        large: "Grande (550×900)",
+        modeChanged: "Modo cambiado a:",
+        nameRequired: "El nombre debe tener al menos 2 caracteres",
+        nameTooLong: "El nombre no puede tener más de 20 caracteres",
+        invalidChars: "Solo se permiten letras, números y espacios",
+        windowOpened: "¡Ventana abierta correctamente!",
+        tabOpened: "¡Pestaña abierta como",
+        host: "anfitrión",
+        guest: "invitado",
+        windowError: "❌ No se pudo abrir la ventana. Verifica que no estén bloqueadas las ventanas emergentes.",
+        tabError: "❌ No se pudo abrir la pestaña. Verifica la configuración del navegador.",
+        readyToUse: "Listo para usar",
+        playSolo: "Jugar solo",
+        dianaText: "Una nueva luna se alza",
+        followLunari: "Sigue a los Lunari",
+        fightSolari: "Lucha contra los Solari",
+        dark: "Oscuro",
+        light: "Claro",
+        clearAllData: "Limpiar todos los datos",
+        helpRemember: "Selecciona automáticamente tu último rol usado (anfitrión/invitado) al abrir la app.",
+        helpAutoFocus: "Trae la nueva ventana al frente al abrirse (puede ser bloqueado por seguridad del navegador).",
+        helpWindowSize: "Establece las dimensiones de la ventana del tracker. Solo aplica al modo ventana, no pestañas.",
+        helpClearData: "Elimina todas las preferencias, nombres y configuraciones guardadas. Resetea la app como si fuera la primera vez.",
+        championIcon: "Icono de Campeón",
+        helpChampionIcon: "Establece un icono de campeón para que lo vean los demás.",
+        userColor: "Color de Usuario",
+        helpUserColor: "Elige un color para tu nombre que verán los demás.",
+
+        defaultColor: "Por defecto"
+      }
+    };
+
+    let currentLang = "en";
+    const savedLang = localStorage.getItem("lol-tracker-lang");
+    if (savedLang) {
+      currentLang = savedLang;
+    } else {
+      const browserLang = navigator.language || navigator.userLanguage;
+      if (browserLang.startsWith('es')) {
+        currentLang = "es";
+      }
+    }
+
+    // ====================== VARIABLES GLOBALES ======================
+    const champions = ['Aatrox', 'Ahri', 'Akali', 'Akshan', 'Alistar', 'Ambessa', 'Amumu', 'Anivia', 'Annie', 'Aphelios', 'Ashe', 'Aurelion Sol', 'Aurora', 'Azir', 'Bard', 'Bel\'Veth', 'Blitzcrank', 'Brand', 'Braum', 'Briar', 'Caitlyn', 'Camille', 'Cassiopeia', 'Cho\'Gath', 'Corki', 'Darius', 'Diana', 'Dr. Mundo', 'Draven', 'Ekko', 'Elise', 'Evelynn', 'Ezreal', 'Fiddlesticks', 'Fiora', 'Fizz', 'Galio', 'Gangplank', 'Garen', 'Gnar', 'Gragas', 'Graves', 'Gwen', 'Hecarim', 'Heimerdinger', 'Hwei', 'Illaoi', 'Irelia', 'Ivern', 'Janna', 'Jarvan IV', 'Jax', 'Jayce', 'Jhin', 'Jinx', 'K\'Sante', 'Kai\'Sa', 'Kalista', 'Karma', 'Karthus', 'Kassadin', 'Katarina', 'Kayle', 'Kayn', 'Kennen', 'Kha\'Zix', 'Kindred', 'Kled', 'Kog\'Maw', 'LeBlanc', 'Lee Sin', 'Leona', 'Lillia', 'Lissandra', 'Lucian', 'Lulu', 'Lux', 'Malphite', 'Malzahar', 'Maokai', 'Master Yi', 'Mel', 'Milio', 'Miss Fortune', 'Mordekaiser', 'Morgana', 'Naafiri', 'Nami', 'Nasus', 'Nautilus', 'Neeko', 'Nidalee', 'Nilah', 'Nocturne', 'Nunu & Willump', 'Olaf', 'Orianna', 'Ornn', 'Pantheon', 'Poppy', 'Pyke', 'Qiyana', 'Quinn', 'Rakan', 'Rammus', 'Rek\'Sai', 'Rell', 'Renata Glasc', 'Renekton', 'Rengar', 'Riven', 'Rumble', 'Ryze', 'Samira', 'Sejuani', 'Senna', 'Seraphine', 'Sett', 'Shaco', 'Shen', 'Shyvana', 'Singed', 'Sion', 'Sivir', 'Skarner', 'Smolder', 'Sona', 'Soraka', 'Swain', 'Sylas', 'Syndra', 'Tahm Kench', 'Taliyah', 'Talon', 'Taric', 'Teemo', 'Thresh', 'Tristana', 'Trundle', 'Tryndamere', 'Twisted Fate', 'Twitch', 'Udyr', 'Urgot', 'Varus', 'Vayne', 'Veigar', 'Vel\'Koz', 'Vex', 'Vi', 'Viego', 'Viktor', 'Vladimir', 'Volibear', 'Warwick', 'Wukong', 'Xayah', 'Xerath', 'Xin Zhao', 'Yasuo', 'Yone', 'Yorick', 'Yuumi', 'Zac', 'Zed', 'Zeri', 'Ziggs', 'Zilean', 'Zoe', 'Zyra'];
+
+    let dianaEffectsActive = false;
+    let dianaPulseInterval = null;
+    let originalJoinText = '';
+    let originalSoloText = '';
+    let originalCreateText = '';
+    let clickCount = 0;
+    let clickTimer = null;
+    let comboDisplay = null;
+    
+    function randomizeName() {
+      const btn = document.getElementById('championButton');
+      
+      // Contador de clicks rápidos
+      clickCount++;
+      
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+      }
+      
+      clickTimer = setTimeout(() => {
+        clickCount = 0;
+        if (comboDisplay) {
+          comboDisplay.style.opacity = '0';
+          setTimeout(() => {
+            comboDisplay.remove();
+            comboDisplay = null;
+          }, 800);
+        }
+      }, 10000);
+      
+      if (clickCount >= 3) {
+        if (!comboDisplay) {
+          comboDisplay = document.createElement('div');
+          comboDisplay.style.cssText = 'position: absolute; top: -40px; right: 0; color: var(--text-muted); font-size: 0.7rem; font-weight: normal; z-index: 1000; pointer-events: none; opacity: 0; transition: opacity 0.8s ease;';
+          btn.parentElement.style.position = 'relative';
+          btn.parentElement.appendChild(comboDisplay);
+          setTimeout(() => comboDisplay.style.opacity = '0.6', 10);
+        }
+        comboDisplay.textContent = `x${clickCount}`;
+      }
+      
+      // Verificar si el botón está bloqueado
+      if (btn.style.pointerEvents === 'none') {
+        return;
+      }
+      
+      // Si hay efectos Diana activos, restaurar todo
+      if (dianaEffectsActive) {
+        const appIcon = document.querySelector('.app-icon');
+        const title = document.querySelector('h1');
+        
+        if (dianaPulseInterval) {
+          clearInterval(dianaPulseInterval);
+          dianaPulseInterval = null;
+        }
+        
+        document.body.classList.remove('diana-mode');
+        title.style.opacity = '0';
+        title.style.transform = 'translateY(20px) scale(1)';
+        appIcon.style.transform = 'scale(0.9) rotate(10deg)';
+        
+        setTimeout(() => {
+          appIcon.src = './images/Flash.png';
+          title.textContent = 'LoL Flash Tracker';
+          title.style.opacity = '1';
+          title.style.transform = 'translateY(0) scale(1)';
+          appIcon.style.transform = 'scale(1) rotate(0deg)';
+          
+          // Restaurar botones
+          const joinBtn = document.getElementById('joinRoomBtn');
+          const soloBtn = document.getElementById('soloBtn');
+          const createBtn = document.getElementById('createRoomBtn');
+          joinBtn.innerHTML = originalJoinText;
+          soloBtn.innerHTML = originalSoloText;
+          createBtn.innerHTML = originalCreateText;
+          joinBtn.style.background = '';
+          soloBtn.style.background = '';
+          createBtn.style.background = '';
+          createBtn.style.border = '';
+          joinBtn.style.boxShadow = '';
+          soloBtn.style.boxShadow = '';
+          createBtn.style.boxShadow = '';
+          
+          // Restaurar favicon
+          const favicon = document.querySelector('link[rel="icon"]');
+          favicon.href = './images/Flash.png';
+        }, 200);
+        
+        dianaEffectsActive = false;
+        
+        // Clear temporary Diana settings
+        window.tempDianaColor = null;
+        window.tempDianaChampion = null;
+      }
+      
+      let randomChampion = getRandomChampion();
+      
+      // 50% de probabilidad de cambiar Diana por otro campeón
+      if (randomChampion.toLowerCase() === 'diana' && Math.random() < 0.5) {
+        randomChampion = getRandomChampion();
+      }
+      
+      // Si es Diana y tema oscuro, activar easter egg
+      if (randomChampion.toLowerCase() === 'diana' && !document.body.classList.contains('light-theme')) {
+        btn.style.transform = 'scale(1)';
+        btn.style.filter = 'grayscale(1)';
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.5';
+        
+        const dianaName = currentLang === 'es' ? 'Diana, El desdén de la Luna' : 'Diana, Scorn of the Moon';
+        elements.nicknameInput.value = dianaName;
+        elements.nicknameInput.dispatchEvent(new Event('input'));
+        
+        // Activar fondo Diana
+        document.body.classList.add('diana-mode');
+        
+        // Set Diana champion icon (temporary only)
+        const championInput = document.getElementById('championInput');
+        championInput.value = 'Diana';
+        const championPreview = document.getElementById('championPreview');
+        championPreview.src = './Champions_assets/Diana.png';
+        championPreview.style.display = 'block';
+        
+        // Set Diana gradient color (temporary only)
+        document.getElementById('userColor').value = '';
+        document.getElementById('colorPicker').value = '#87ceeb';
+        document.getElementById('colorPreview').style.background = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        
+        // Update champion button to show Diana icon
+        const championButton = document.getElementById('championButton');
+        championButton.innerHTML = `<img src="./Champions_assets/Diana.png" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">`;
+        championButton.title = 'Diana';
+        championButton.style.cursor = 'default';
+        championButton.style.opacity = '0.8';
+        championButton.onclick = null;
+        
+        // Store temporary Diana settings
+        window.tempDianaColor = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        window.tempDianaChampion = 'Diana';
+        updatePreview();
+        
+        // Sonido
+        const audio = new Audio('./sound/Diana_Select.ogg');
+        audio.play().catch(() => {});
+        
+        // Cambiar botones
+        const joinBtn = document.getElementById('joinRoomBtn');
+        const soloBtn = document.getElementById('soloBtn');
+        const createBtn = document.getElementById('createRoomBtn');
+        originalJoinText = joinBtn.innerHTML;
+        originalSoloText = soloBtn.innerHTML;
+        originalCreateText = createBtn.innerHTML;
+        
+        joinBtn.innerHTML = `<span>🌙</span> <span>${t('followLunari')}</span>`;
+        soloBtn.innerHTML = `<span>⚔️</span> <span>${t('fightSolari')}</span>`;
+        createBtn.innerHTML = `<span>🌙</span> <span>Reveal the Truth</span>`;
+        joinBtn.style.background = 'linear-gradient(45deg, #1e3a8a, #3730a3)';
+        soloBtn.style.background = 'linear-gradient(45deg, #374151, #1f2937)';
+        createBtn.style.background = 'linear-gradient(45deg, #0f172a, #1e293b)';
+        createBtn.style.border = '2px solid #e5e7eb';
+        joinBtn.style.boxShadow = '0 0 15px rgba(30, 58, 138, 0.5)';
+        soloBtn.style.boxShadow = '0 0 15px rgba(55, 65, 81, 0.5)';
+        createBtn.style.boxShadow = '0 0 15px rgba(15, 23, 42, 0.7)';
+        
+        // Cambiar icono y título
+        const appIcon = document.querySelector('.app-icon');
+        const title = document.querySelector('h1');
+        
+        title.style.opacity = '0';
+        title.style.transform = 'translateY(-20px)';
+        appIcon.style.transform = 'scale(0.8) rotate(-10deg)';
+        
+        setTimeout(() => {
+          appIcon.src = './Champions_assets/Diana.png';
+          title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> ${t('dianaText')} <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
+          title.style.opacity = '1';
+          title.style.transform = 'translateY(0) scale(1)';
+          appIcon.style.transform = 'scale(1.1) rotate(5deg)';
+          
+          // Cambiar favicon
+          const favicon = document.querySelector('link[rel="icon"]');
+          favicon.href = './Champions_assets/Diana.png';
+          
+          // Update preview with Diana icon and gradient
+          updatePreview();
+          
+          // Iniciar pulsaciones cada 2 segundos
+          dianaPulseInterval = setInterval(() => {
+            title.style.transform = 'translateY(0) scale(1.15)';
+            appIcon.style.transform = 'scale(1.15) rotate(5deg)';
+            
+            setTimeout(() => {
+              title.style.transform = 'translateY(0) scale(1)';
+              appIcon.style.transform = 'scale(1.1) rotate(5deg)';
+            }, 300);
+          }, 2000);
+        }, 200);
+        
+        dianaEffectsActive = true;
+        
+        setTimeout(() => {
+          btn.style.filter = '';
+          btn.style.pointerEvents = '';
+          btn.style.opacity = '';
+        }, 3000);
+        return;
+      }
+      
+      // Animación normal para otros campeones
+      elements.nicknameInput.value = randomChampion;
+      elements.nicknameInput.dispatchEvent(new Event('input'));
+    }
+
+    const elements = {
+      nicknameInput: document.getElementById('nickname'),
+      createRoomBtn: document.getElementById('createRoomBtn'),
+      joinRoomBtn: document.getElementById('joinRoomBtn'),
+      soloBtn: document.getElementById('soloBtn'),
+      roleHost: document.getElementById('role-host'),
+      roleJoin: document.getElementById('role-join'),
+      modeSwitch: document.getElementById('modeSwitch'),
+      statusDot: document.getElementById('statusDot'),
+      statusText: document.getElementById('statusText'),
+      nicknameError: document.getElementById('nicknameError'),
+
+      rememberChoice: document.getElementById('rememberChoice'),
+      autoFocus: document.getElementById('autoFocus'),
+      windowSize: document.getElementById('windowSize'),
+      langSwitch: document.getElementById('langSwitch')
+    };
+
+    let isTabMode = false;
+    let recentNicknames = JSON.parse(localStorage.getItem('lol-tracker-recent-names') || '[]');
+
+    let dianaEasterEggTriggered = false;
+
+    // ====================== FUNCIONES DE TRADUCCIÓN ======================
+    function t(key) {
+      return translations[currentLang][key] || key;
+    }
+
+    function getRandomChampion() {
+      return champions[Math.floor(Math.random() * champions.length)];
+    }
+
+    function updateTexts() {
+      document.querySelectorAll('[data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        el.textContent = t(key);
+      });
+
+      document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-translate-placeholder');
+        el.placeholder = t(key);
+      });
+
+      elements.nicknameInput.placeholder = `${currentLang === 'es' ? 'Ej' : 'e.g'}: ${getRandomChampion()}`;
+      elements.statusText.textContent = t("ready");
+      
+      const langLabels = document.querySelectorAll(".lang-label");
+      langLabels[0].classList.toggle("active", currentLang === "en");
+      langLabels[1].classList.toggle("active", currentLang === "es");
+      
+      updateThemeLabels();
+    }
+
+    function updateThemeLabels() {
+      const themeLabels = document.querySelectorAll(".language-switch")[1].querySelectorAll(".lang-label");
+      const isLight = document.body.classList.contains('light-theme');
+      themeLabels[0].classList.toggle("active", !isLight);
+      themeLabels[1].classList.toggle("active", isLight);
+      themeLabels[0].innerHTML = `🌙 ${t('dark')}`;
+      themeLabels[1].innerHTML = `☀️ ${t('light')}`;
+    }
+
+    function switchLanguage() {
+      currentLang = currentLang === "en" ? "es" : "en";
+      localStorage.setItem("lol-tracker-lang", currentLang);
+      elements.langSwitch.checked = currentLang === "es";
+      updateTexts();
+      showToast(t("modeChanged") + " " + (currentLang === "en" ? "English" : "Español"), "info", 2000);
+    }
+
+    // ====================== UTILIDADES ======================
+    function showToast(message, type = 'info', duration = 3000) {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => toast.classList.add('show'), 100);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    function showError(message) {
+      elements.nicknameError.textContent = message;
+      elements.nicknameError.classList.add('show');
+      elements.nicknameInput.classList.add('error');
+      
+      setTimeout(() => {
+        elements.nicknameError.classList.remove('show');
+        elements.nicknameInput.classList.remove('error');
+      }, 3000);
+    }
+
+    function updateStatus(status, type = 'success') {
+      elements.statusText.textContent = status;
+      elements.statusDot.className = `status-dot ${type}`;
+    }
+
+    // ====================== VALIDACIÓN ======================
+    function validateNickname(nickname, isUsingRandomName = false) {
+      // Skip all validations during Diana easter egg
+      if (dianaEffectsActive && (nickname === 'Diana, Scorn of the Moon' || nickname === 'Diana, El desdén de la Luna')) {
+        return true;
+      }
+      
+      if (!nickname || nickname.trim().length < 2) {
+        showError(t("nameRequired"));
+        return false;
+      }
+      
+      if (nickname.trim().length > 20) {
+        showError(t("nameTooLong"));
+        return false;
+      }
+      
+      if (!/^[a-zA-Z0-9\sáéíóúñüÁÉÍÓÚÑÜ.']+$/.test(nickname.trim())) {
+        showError(t("invalidChars"));
+        return false;
+      }
+      
+      // Skip champion name validation if using random name from placeholder
+      if (isUsingRandomName) {
+        return true;
+      }
+      
+      // Check if nickname is a champion name (only when champion icon is selected)
+      const selectedChampion = localStorage.getItem('selected-champion');
+      const isChampionName = champions.some(champion => 
+        champion.toLowerCase() === nickname.trim().toLowerCase()
+      );
+      
+      if (isChampionName && selectedChampion && selectedChampion.toLowerCase() !== nickname.trim().toLowerCase()) {
+        showError(currentLang === 'es' ? 'No puedes usar nombres de campeones como tu nombre' : 'You cannot use champion names as your nickname');
+        return false;
+      }
+      
+      return true;
+    }
+
+    // ====================== GESTIÓN DE ROLES ======================
+    function selectRole(role) {
+      const isHost = role === 'host';
+      
+      elements.roleHost.checked = isHost;
+      elements.roleJoin.checked = !isHost;
+      
+      document.querySelectorAll('.role-card').forEach(card => {
+        card.setAttribute('aria-checked', 'false');
+        card.classList.remove('selected');
+      });
+      
+      const selectedCard = isHost ? 
+        elements.roleHost.closest('.role-card') : 
+        elements.roleJoin.closest('.role-card');
+      
+      selectedCard.setAttribute('aria-checked', 'true');
+      selectedCard.classList.add('selected');
+      
+      // Guardar rol seleccionado si la opción está activada
+      if (elements.rememberChoice.checked) {
+        localStorage.setItem('preferred-role', role);
+      }
+      
+      updateRoleUI();
+    }
+
+    function updateRoleUI() {
+      const isJoin = elements.roleJoin.checked;
+      const joinRoleCard = elements.roleJoin.closest('.role-card');
+      const hostRoleCard = elements.roleHost.closest('.role-card');
+      const guestBox = document.querySelector('.guest-box');
+      
+      if (isJoin) {
+        // Fade out Join/Solo card
+        joinRoleCard.style.opacity = '0';
+        joinRoleCard.style.transform = 'translateY(-10px) scale(0.95)';
+        
+        // Fade out Create Room button
+        elements.createRoomBtn.style.opacity = '0';
+        elements.createRoomBtn.style.transform = 'translateY(-10px) scale(0.95)';
+        
+        setTimeout(() => {
+          joinRoleCard.style.display = 'none';
+          elements.createRoomBtn.style.display = 'none';
+          guestBox.classList.remove('compact');
+          
+          // Fade in Join/Solo buttons
+          elements.joinRoomBtn.style.display = 'flex';
+          elements.joinRoomBtn.style.opacity = '0';
+          elements.joinRoomBtn.style.transform = 'translateY(10px) scale(0.95)';
+          
+          elements.soloBtn.style.display = 'flex';
+          elements.soloBtn.style.marginTop = '8px';
+          elements.soloBtn.style.opacity = '0';
+          elements.soloBtn.style.transform = 'translateY(10px) scale(0.95)';
+          
+          // Fade in Host card
+          hostRoleCard.style.display = 'flex';
+          hostRoleCard.style.opacity = '0';
+          hostRoleCard.style.transform = 'translateY(10px) scale(0.95)';
+          
+          setTimeout(() => {
+            elements.joinRoomBtn.style.opacity = '1';
+            elements.joinRoomBtn.style.transform = 'translateY(0) scale(1)';
+            elements.soloBtn.style.opacity = '1';
+            elements.soloBtn.style.transform = 'translateY(0) scale(1)';
+            hostRoleCard.style.opacity = '1';
+            hostRoleCard.style.transform = 'translateY(0) scale(1)';
+          }, 150);
+        }, 400);
+      } else {
+        // Fade out Join/Solo buttons
+        elements.joinRoomBtn.style.opacity = '0';
+        elements.joinRoomBtn.style.transform = 'translateY(-10px) scale(0.95)';
+        elements.soloBtn.style.opacity = '0';
+        elements.soloBtn.style.transform = 'translateY(-10px) scale(0.95)';
+        
+        // Fade out Host card
+        hostRoleCard.style.opacity = '0';
+        hostRoleCard.style.transform = 'translateY(-10px) scale(0.95)';
+        
+        setTimeout(() => {
+          elements.joinRoomBtn.style.display = 'none';
+          elements.soloBtn.style.display = 'none';
+          hostRoleCard.style.display = 'none';
+          guestBox.classList.add('compact');
+          
+          // Fade in Join/Solo card
+          joinRoleCard.style.display = 'flex';
+          joinRoleCard.style.opacity = '0';
+          joinRoleCard.style.transform = 'translateY(10px) scale(0.95)';
+          
+          // Fade in Create Room button
+          elements.createRoomBtn.style.display = 'flex';
+          elements.createRoomBtn.style.opacity = '0';
+          elements.createRoomBtn.style.transform = 'translateY(10px) scale(0.95)';
+          
+          setTimeout(() => {
+            joinRoleCard.style.opacity = '1';
+            joinRoleCard.style.transform = 'translateY(0) scale(1)';
+            elements.createRoomBtn.style.opacity = '1';
+            elements.createRoomBtn.style.transform = 'translateY(0) scale(1)';
+          }, 150);
+        }, 400);
+      }
+    }
+
+    // ====================== GESTIÓN DE VENTANAS ======================
+    function getWindowSize() {
+      const size = elements.windowSize.value;
+      switch (size) {
+        case 'small': return { width: 450, height: 725 };
+        case 'large': return { width: 550, height: 900 };
+        default: return { width: 450, height: 775 };
+      }
+    }
+
+    function abrirEnVentana(url) {
+      const { width, height } = getWindowSize();
+      const opciones = `width=${width},height=${height},resizable=yes,scrollbars=no,titlebar=no,toolbar=no,location=no,status=no`;
+
+      const ventana = window.open(url, 'LoLFlashTracker', opciones);
+      
+      if (ventana) {
+        if (elements.autoFocus.checked) {
+          ventana.focus();
+        }
+        showToast(t('windowOpened'), 'success');
+        updateStatus('Window open', 'success');
+      } else {
+        showToast(t('windowError'), 'error', 5000);
+        updateStatus('Error opening window', 'error');
+      }
+    }
+
+    // ====================== MANEJADORES DE EVENTOS ======================
+    function handleKeyDown(event, role) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        selectRole(role);
+      }
+    }
+
+    function launchApp(role) {
+      let nickname = elements.nicknameInput.value.trim();
+      const selectedChampion = localStorage.getItem('selected-champion');
+      let isUsingRandomName = false;
+      
+      // Si hay campeón seleccionado pero no hay nombre, mostrar error
+      if (selectedChampion && !nickname) {
+        showError(currentLang === 'es' ? 'Debes introducir un nombre cuando seleccionas un campeón' : 'You must enter a name when selecting a champion');
+        return;
+      }
+      
+      // Si no hay nombre y no hay campeón, usar el del placeholder
+      if (!nickname && !selectedChampion) {
+        const placeholder = elements.nicknameInput.placeholder;
+        const match = placeholder.match(/: (.+)/);
+        nickname = match ? match[1] : 'Player';
+        isUsingRandomName = true;
+      }
+      
+      if (!validateNickname(nickname, isUsingRandomName)) {
+        return;
+      }
+      
+      addToRecentNames(nickname);
+
+      // Usar sessionStorage para transferir datos entre ventanas
+      const config = {
+        nick: nickname,
+        role: role,
+        theme: document.body.classList.contains('light-theme') ? 'light' : 'dark',
+        lang: currentLang,
+        diana: dianaEffectsActive,
+        champion: selectedChampion,
+        color: localStorage.getItem('user-color')
+      };
+      
+      sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(config));
+      
+      const url = 'lol-spell-tracker.html';
+      
+      if (isTabMode) {
+        const newTab = window.open(url, '_blank');
+        if (newTab) {
+          showToast(`${t('tabOpened')} ${role === 'host' ? t('host') : t('guest')}!`, 'success');
+          updateStatus('Tab open', 'success');
+        } else {
+          showToast(t('tabError'), 'error');
+          updateStatus('Error opening tab', 'error');
+        }
+      } else {
+        abrirEnVentana(url);
+      }
+    }
+    
+    function addToRecentNames(name) {
+      if (!name || name.length < 2) return;
+      
+      // No añadir nombres de campeones a las sugerencias
+      const isChampionName = champions.some(champion => 
+        champion.toLowerCase() === name.toLowerCase()
+      );
+      if (isChampionName) return;
+      
+      recentNicknames = recentNicknames.filter(n => n.toLowerCase() !== name.toLowerCase());
+      recentNicknames.unshift(name);
+      recentNicknames = recentNicknames.slice(0, 10);
+      localStorage.setItem('lol-tracker-recent-names', JSON.stringify(recentNicknames));
+      updateDatalist();
+    }
+    
+    function updateDatalist() {
+      const datalist = document.getElementById('recentNames');
+      datalist.innerHTML = '';
+      recentNicknames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        datalist.appendChild(option);
+      });
+    }
+    
+
+
+    // ====================== INICIALIZACIÓN ======================
+    function loadSettings() {
+      const savedNick = localStorage.getItem('lol-tracker-nickname');
+      if (savedNick) {
+        elements.nicknameInput.value = savedNick;
+      }
+
+      const savedMode = localStorage.getItem('lol-tracker-mode') === 'tab';
+      elements.modeSwitch.checked = savedMode;
+      isTabMode = savedMode;
+
+      const preferredRole = localStorage.getItem('preferred-role');
+      if (preferredRole && elements.rememberChoice.checked) {
+        selectRole(preferredRole);
+      } else {
+        selectRole('join');
+      }
+
+      const rememberChoice = localStorage.getItem('remember-choice') !== 'false';
+      elements.rememberChoice.checked = rememberChoice;
+
+      const autoFocus = localStorage.getItem('auto-focus') !== 'false';
+      elements.autoFocus.checked = autoFocus;
+
+      const windowSize = localStorage.getItem('window-size') || 'medium';
+      elements.windowSize.value = windowSize;
+
+      elements.langSwitch.checked = currentLang === "es";
+      
+      const savedUserColor = localStorage.getItem('user-color');
+      if (savedUserColor) {
+        // Check if it's a preset color
+        const isPresetColor = document.querySelector(`#userColor option[value="${savedUserColor}"]`);
+        if (isPresetColor) {
+          document.getElementById('userColor').value = savedUserColor;
+        } else {
+          document.getElementById('colorPicker').value = savedUserColor;
+        }
+        document.getElementById('colorPreview').style.background = savedUserColor;
+      }
+      
+
+      
+      const savedTheme = localStorage.getItem('lol-tracker-theme');
+      const themeSwitch = document.getElementById('themeSwitch');
+      
+      if (savedTheme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        themeSwitch.checked = !prefersDark;
+        document.body.classList.toggle('light-theme', !prefersDark);
+      } else if (savedTheme === 'light') {
+        themeSwitch.checked = true;
+        document.body.classList.add('light-theme');
+      } else if (!savedTheme) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        themeSwitch.checked = !prefersDark;
+        document.body.classList.toggle('light-theme', !prefersDark);
+        localStorage.setItem('lol-tracker-theme', 'auto');
+      }
+      
+      updateTexts();
+      updateDatalist();
+    }
+
+    function setupEventListeners() {
+      elements.nicknameInput.addEventListener('input', (e) => {
+        elements.nicknameError.classList.remove('show');
+        elements.nicknameInput.classList.remove('error');
+        
+        // No easter egg al escribir manualmente
+        document.body.classList.remove('diana-mode');
+        dianaEasterEggTriggered = false;
+
+      });
+      
+
+
+      elements.nicknameInput.addEventListener('blur', (e) => {
+        const val = e.target.value.trim();
+        if (val) {
+          localStorage.setItem('lol-tracker-nickname', val);
+        }
+      });
+      
+      elements.nicknameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const selectedRole = elements.roleHost.checked ? 'host' : 'join';
+          launchApp(selectedRole);
+        }
+      });
+
+      elements.modeSwitch.addEventListener('change', () => {
+        isTabMode = elements.modeSwitch.checked;
+        localStorage.setItem('lol-tracker-mode', isTabMode ? 'tab' : 'window');
+        showToast(`${t('modeChanged')} ${isTabMode ? t('tab') : t('window')}`, 'info', 2000);
+      });
+
+      elements.langSwitch.addEventListener('change', () => {
+        switchLanguage();
+        
+        // Actualizar texto Diana si está activo
+        if (dianaEffectsActive) {
+          const title = document.querySelector('h1');
+          const joinBtn = document.getElementById('joinRoomBtn');
+          const soloBtn = document.getElementById('soloBtn');
+          
+          title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> ${t('dianaText')} <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
+          joinBtn.innerHTML = `<span>🌙</span> <span>${t('followLunari')}</span>`;
+          soloBtn.innerHTML = `<span>⚔️</span> <span>${t('fightSolari')}</span>`;
+        }
+      });
+      
+      const themeSwitch = document.getElementById('themeSwitch');
+      
+      themeSwitch.addEventListener('change', () => {
+        document.body.classList.toggle('light-theme', themeSwitch.checked);
+        localStorage.setItem('lol-tracker-theme', themeSwitch.checked ? 'light' : 'dark');
+        updateThemeLabels();
+      });
+      
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        const savedTheme = localStorage.getItem('lol-tracker-theme');
+        if (savedTheme === 'auto') {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          themeSwitch.checked = !prefersDark;
+          document.body.classList.toggle('light-theme', !prefersDark);
+          updateThemeLabels();
+        }
+      });
+
+      elements.createRoomBtn.addEventListener('click', () => launchApp('host'));
+      
+      const championButton = document.getElementById('championButton');
+      championButton.addEventListener('click', () => {
+        championButton.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          championButton.style.transform = 'scale(1)';
+        }, 100);
+      });
+      elements.joinRoomBtn.addEventListener('click', () => launchApp('join'));
+      elements.soloBtn.addEventListener('click', () => launchApp('solo'));
+
+      elements.rememberChoice.addEventListener('change', () => {
+        localStorage.setItem('remember-choice', elements.rememberChoice.checked);
+        if (!elements.rememberChoice.checked) {
+          localStorage.removeItem('preferred-role');
+        }
+      });
+
+      elements.autoFocus.addEventListener('change', () => {
+        localStorage.setItem('auto-focus', elements.autoFocus.checked);
+      });
+
+      elements.windowSize.addEventListener('change', () => {
+        localStorage.setItem('window-size', elements.windowSize.value);
+      });
+
+      // Champion Icon functionality
+      const championInput = document.getElementById('championInput');
+      const championList = document.getElementById('championList');
+      const championPreview = document.getElementById('championPreview');
+      const clearChampion = document.getElementById('clearChampion');
+
+      function updateChampionList(filter = '') {
+        championList.innerHTML = '';
+        const filtered = champions.filter(champ => 
+          champ.toLowerCase().includes(filter.toLowerCase())
+        ).slice(0, 10);
+        
+        filtered.forEach(champ => {
+          const option = document.createElement('option');
+          option.value = champ;
+          championList.appendChild(option);
+        });
+      }
+
+      function getChampionFileName(championName) {
+        // Special cases first
+        const specialCases = {
+          "Dr. Mundo": "Dr_Mundo",
+          "Nunu": "Nunu_&_Willump"
+        };
+        
+        if (specialCases[championName]) {
+          return specialCases[championName];
+        }
+        
+        // Keep straight apostrophes as they are in file names
+        let fileName = championName
+          .replace(/ /g, "_")   // spaces to underscores
+          .replace(/\./g, "_"); // dots to underscores
+        
+        return fileName;
+      }
+
+      function updateChampionPreview(championName) {
+        const championButton = document.getElementById('championButton');
+        
+        if (championName && champions.includes(championName)) {
+          const fileName = getChampionFileName(championName);
+          const fullPath = `./Champions_assets/${fileName}.png`;
+          
+          championPreview.src = fullPath;
+          championPreview.style.display = 'block';
+          
+          // Replace randomize button with champion image and disable functionality
+          championButton.innerHTML = `<img src="${fullPath}" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">`;
+          championButton.title = championName;
+          championButton.style.cursor = 'default';
+          championButton.style.opacity = '0.8';
+          championButton.onclick = null;
+          
+          // Update placeholder when champion is selected
+          elements.nicknameInput.placeholder = currentLang === 'es' ? 'Introduce un nombre' : 'Set a name';
+          
+          // Clear username if it's a different champion name
+          const currentName = elements.nicknameInput.value.trim();
+          const isChampionName = champions.some(champion => 
+            champion.toLowerCase() === currentName.toLowerCase()
+          );
+          if (isChampionName && currentName.toLowerCase() !== championName.toLowerCase()) {
+            elements.nicknameInput.value = '';
+          }
+          
+          if (!dianaEffectsActive || championName !== 'Diana') {
+            localStorage.setItem('selected-champion', championName);
+          }
+        } else {
+          championPreview.style.display = 'none';
+          championPreview.src = '';
+          
+          // Restore randomize button
+          championButton.innerHTML = '🎲';
+          championButton.title = 'Random champion name';
+          championButton.style.cursor = 'pointer';
+          championButton.style.opacity = '1';
+          championButton.onclick = randomizeName;
+          
+          // Restore original placeholder
+          elements.nicknameInput.placeholder = `${currentLang === 'es' ? 'Ej' : 'e.g'}: ${getRandomChampion()}`;
+          
+          localStorage.removeItem('selected-champion');
+        }
+      }
+
+      championInput.addEventListener('input', (e) => {
+        const value = e.target.value;
+        updateChampionList(value);
+        
+        const exactMatch = champions.find(champ => 
+          champ.toLowerCase() === value.toLowerCase()
+        );
+        
+        // Don't save Diana during easter egg
+        if (dianaEffectsActive && exactMatch === 'Diana') {
+          return;
+        }
+        
+        updateChampionPreview(exactMatch);
+      });
+
+      clearChampion.addEventListener('click', () => {
+        clearChampion.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          clearChampion.style.transform = 'scale(1)';
+        }, 100);
+        championInput.value = '';
+        updateChampionPreview('');
+        updateChampionList();
+      });
+
+      // Load saved champion
+      const savedChampion = localStorage.getItem('selected-champion');
+      if (savedChampion) {
+        championInput.value = savedChampion;
+        updateChampionPreview(savedChampion);
+      }
+      updateChampionList();
+      
+      // User Color functionality
+      const userColorSelect = document.getElementById('userColor');
+      const colorPreview = document.getElementById('colorPreview');
+      
+      function updateColorPreview(color) {
+        if (color) {
+          colorPreview.style.background = color;
+        } else {
+          colorPreview.style.background = 'var(--text-primary)';
+        }
+      }
+      
+      const colorPicker = document.getElementById('colorPicker');
+      
+      userColorSelect.addEventListener('change', (e) => {
+        const selectedColor = e.target.value;
+        updateColorPreview(selectedColor);
+        if (selectedColor) {
+          localStorage.setItem('user-color', selectedColor);
+          colorPicker.value = '#bb86fc'; // Reset color picker
+        } else {
+          localStorage.removeItem('user-color');
+        }
+        updatePreview();
+      });
+      
+      colorPicker.addEventListener('input', (e) => {
+        const selectedColor = e.target.value;
+        updateColorPreview(selectedColor);
+        if (!dianaEffectsActive || selectedColor !== 'linear-gradient(45deg, #ffffff, #87ceeb)') {
+          localStorage.setItem('user-color', selectedColor);
+        }
+        userColorSelect.value = ''; // Reset selector
+        updatePreview();
+      });
+      
+      const clearColorBtn = document.getElementById('clearColor');
+      clearColorBtn.addEventListener('click', () => {
+        clearColorBtn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          clearColorBtn.style.transform = 'scale(1)';
+        }, 100);
+        
+        userColorSelect.value = '';
+        colorPicker.value = '#bb86fc';
+        updateColorPreview('');
+        localStorage.removeItem('user-color');
+        updatePreview();
+      });
+      
+
+      
+      // User Preview functionality
+      function updatePreview() {
+        const previewContainer = document.getElementById('userPreview');
+        const previewTop = document.getElementById('userPreviewTop');
+        
+        // Get current name or placeholder
+        let displayName = elements.nicknameInput.value.trim();
+        if (!displayName) {
+          const placeholder = elements.nicknameInput.placeholder;
+          const match = placeholder.match(/: (.+)/);
+          displayName = match ? match[1] : 'Player';
+        }
+        
+        // Get current champion and color (use temporary Diana settings if active)
+        const selectedChampion = dianaEffectsActive ? (window.tempDianaChampion || localStorage.getItem('selected-champion')) : localStorage.getItem('selected-champion');
+        const selectedColor = dianaEffectsActive ? (window.tempDianaColor || localStorage.getItem('user-color')) : localStorage.getItem('user-color');
+        
+        // Update both previews
+        [previewContainer, previewTop].forEach(container => {
+          if (!container) return;
+          
+          // Clear previous content
+          container.innerHTML = '';
+          
+          // Add champion icon if selected
+          if (selectedChampion) {
+            const fileName = getChampionFileName(selectedChampion);
+            const championImg = document.createElement('img');
+            championImg.src = `./Champions_assets/${fileName}.png`;
+            championImg.style.cssText = container === previewTop ? 
+              'width: 14px; height: 14px; border-radius: 2px; object-fit: cover;' :
+              'width: 16px; height: 16px; border-radius: 2px; object-fit: cover;';
+            championImg.onerror = () => championImg.style.display = 'none';
+            container.appendChild(championImg);
+          }
+          
+          // Add name with color
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = displayName;
+          if (selectedColor && selectedColor.startsWith('linear-gradient')) {
+            nameSpan.style.background = selectedColor;
+            nameSpan.style.webkitBackgroundClip = 'text';
+            nameSpan.style.webkitTextFillColor = 'transparent';
+            nameSpan.style.backgroundClip = 'text';
+          } else {
+            nameSpan.style.color = selectedColor || 'var(--text-primary)';
+          }
+          container.appendChild(nameSpan);
+        });
+      }
+      
+      // Update preview on changes
+      elements.nicknameInput.addEventListener('input', updatePreview);
+      userColorSelect.addEventListener('change', updatePreview);
+      championInput.addEventListener('input', updatePreview);
+      
+      // Initial preview update
+      updatePreview();
+
+      document.getElementById('testDiana').addEventListener('click', () => {
+        const dianaName = currentLang === 'es' ? 'Diana, El desdén de la Luna' : 'Diana, Scorn of the Moon';
+        elements.nicknameInput.value = dianaName;
+        elements.nicknameInput.dispatchEvent(new Event('input'));
+        
+        // Force Diana easter egg activation
+        const btn = document.getElementById('championButton');
+        btn.style.transform = 'scale(1)';
+        btn.style.filter = 'grayscale(1)';
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.5';
+        
+        // Activate Diana background
+        document.body.classList.add('diana-mode');
+        
+        // Set Diana champion icon (temporary only)
+        const championInput = document.getElementById('championInput');
+        championInput.value = 'Diana';
+        const championPreview = document.getElementById('championPreview');
+        championPreview.src = './Champions_assets/Diana.png';
+        championPreview.style.display = 'block';
+        
+        // Set Diana gradient color (temporary only)
+        document.getElementById('userColor').value = '';
+        document.getElementById('colorPicker').value = '#87ceeb';
+        document.getElementById('colorPreview').style.background = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        
+        // Update champion button to show Diana icon
+        const championButton = document.getElementById('championButton');
+        championButton.innerHTML = `<img src="./Champions_assets/Diana.png" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">`;
+        championButton.title = 'Diana';
+        championButton.style.cursor = 'default';
+        championButton.style.opacity = '0.8';
+        championButton.onclick = null;
+        
+        // Store temporary Diana settings
+        window.tempDianaColor = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        window.tempDianaChampion = 'Diana';
+        updatePreview();
+        
+        // Play sound
+        const audio = new Audio('./sound/Diana_Select.ogg');
+        audio.play().catch(() => {});
+        
+        // Change buttons
+        const joinBtn = document.getElementById('joinRoomBtn');
+        const soloBtn = document.getElementById('soloBtn');
+        const createBtn = document.getElementById('createRoomBtn');
+        originalJoinText = joinBtn.innerHTML;
+        originalSoloText = soloBtn.innerHTML;
+        originalCreateText = createBtn.innerHTML;
+        
+        joinBtn.innerHTML = `<span>🌙</span> <span>${t('followLunari')}</span>`;
+        soloBtn.innerHTML = `<span>⚔️</span> <span>${t('fightSolari')}</span>`;
+        createBtn.innerHTML = `<span>🌙</span> <span>Reveal the Truth</span>`;
+        joinBtn.style.background = 'linear-gradient(45deg, #1e3a8a, #3730a3)';
+        soloBtn.style.background = 'linear-gradient(45deg, #374151, #1f2937)';
+        createBtn.style.background = 'linear-gradient(45deg, #0f172a, #1e293b)';
+        createBtn.style.border = '2px solid #e5e7eb';
+        joinBtn.style.boxShadow = '0 0 15px rgba(30, 58, 138, 0.5)';
+        soloBtn.style.boxShadow = '0 0 15px rgba(55, 65, 81, 0.5)';
+        createBtn.style.boxShadow = '0 0 15px rgba(15, 23, 42, 0.7)';
+        
+        // Change icon and title
+        const appIcon = document.querySelector('.app-icon');
+        const title = document.querySelector('h1');
+        
+        title.style.opacity = '0';
+        title.style.transform = 'translateY(-20px)';
+        appIcon.style.transform = 'scale(0.8) rotate(-10deg)';
+        
+        setTimeout(() => {
+          appIcon.src = './Champions_assets/Diana.png';
+          title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> ${t('dianaText')} <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
+          title.style.opacity = '1';
+          title.style.transform = 'translateY(0) scale(1)';
+          appIcon.style.transform = 'scale(1.1) rotate(5deg)';
+          
+          // Change favicon
+          const favicon = document.querySelector('link[rel="icon"]');
+          favicon.href = './Champions_assets/Diana.png';
+          
+          // Update preview with Diana icon and gradient
+          updatePreview();
+          
+          // Start pulsing every 2 seconds
+          dianaPulseInterval = setInterval(() => {
+            title.style.transform = 'translateY(0) scale(1.15)';
+            appIcon.style.transform = 'scale(1.15) rotate(5deg)';
+            
+            setTimeout(() => {
+              title.style.transform = 'translateY(0) scale(1)';
+              appIcon.style.transform = 'scale(1.1) rotate(5deg)';
+            }, 300);
+          }, 2000);
+        }, 200);
+        
+        dianaEffectsActive = true;
+        
+        setTimeout(() => {
+          btn.style.filter = '';
+          btn.style.pointerEvents = '';
+          btn.style.opacity = '';
+        }, 3000);
+      });
+      
+      document.getElementById('clearAllData').addEventListener('click', () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        // Clear all data including champion, color, and auto-copy
+        championInput.value = '';
+        updateChampionPreview('');
+        userColorSelect.value = '';
+        document.getElementById('colorPicker').value = '#bb86fc';
+
+        document.getElementById('clearColor').style.transform = 'scale(1)';
+        updateColorPreview('');
+        updatePreview();
+        showToast(currentLang === 'es' ? 'Todos los datos han sido eliminados' : 'All data has been cleared', 'success', 2000);
+        setTimeout(() => location.reload(), 1000);
+      });
+
+      document.getElementById('advancedSettings').addEventListener('toggle', (e) => {
+        const helpBtn = document.getElementById('helpBtn');
+        helpBtn.style.display = e.target.open ? 'flex' : 'none';
+        if (!e.target.open) {
+          helpBtn.classList.remove('active');
+          document.querySelectorAll('.help-text').forEach(el => {
+            el.style.opacity = '0';
+            setTimeout(() => el.style.display = 'none', 300);
+          });
+        }
+      });
+
+      document.getElementById('helpBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const btn = e.target;
+        const isActive = btn.classList.contains('active');
+        
+        btn.classList.toggle('active');
+        
+        document.querySelectorAll('.help-text').forEach(el => {
+          if (isActive) {
+            el.style.opacity = '0';
+            el.style.maxHeight = '0';
+            el.style.padding = '0';
+            setTimeout(() => el.style.display = 'none', 400);
+          } else {
+            el.style.display = 'block';
+            setTimeout(() => {
+              el.style.opacity = '1';
+              el.style.maxHeight = '100px';
+              el.style.padding = '4px 0';
+            }, 10);
+          }
+        });
+      });
+    }
+
+    // ====================== INICIO DE LA APLICACIÓN ======================
+    window.addEventListener('load', () => {
+      loadSettings();
+      setupEventListeners();
+      updateRoleUI();
+      
+      setTimeout(() => {
+        elements.nicknameInput.focus();
+      }, 500);
+
+      updateStatus(t('readyToUse'), 'success');
+    });
+  </script>
+</body>
+</html>
