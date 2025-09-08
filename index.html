@@ -232,11 +232,12 @@
       position: relative;
       overflow: hidden;
       box-shadow: 0 0 20px rgba(187, 134, 252, 0.2);
-      transition: var(--transition), height 0.3s ease, padding 0.3s ease;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .guest-box.compact {
       padding: 20px 20px 12px 20px;
+      transform: translateY(-5px);
     }
 
     .guest-box::before {
@@ -341,10 +342,26 @@
       align-items: center; 
       justify-content: space-between; 
       cursor: pointer; 
-      transition: var(--transition);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       margin-bottom: 8px;
       position: relative;
       overflow: hidden;
+    }
+
+    .role-card.fade-out {
+      opacity: 0;
+      transform: translateY(-15px) scale(0.95);
+      pointer-events: none;
+    }
+
+    .role-card.fade-in {
+      opacity: 0;
+      transform: translateY(15px) scale(0.95);
+    }
+
+    .role-card.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
 
     .role-card:hover { 
@@ -404,7 +421,7 @@
       border-radius: var(--radius); 
       cursor: pointer; 
       box-shadow: var(--shadow); 
-      transition: var(--transition), opacity 0.3s ease, transform 0.3s ease, height 0.3s ease, margin 0.3s ease, visibility 0.3s ease; 
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
       width: 100%; 
       max-width: 320px; 
       display: flex; 
@@ -415,6 +432,22 @@
       overflow: hidden;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+    }
+
+    .action-button.slide-out {
+      opacity: 0;
+      transform: translateX(-30px) scale(0.95);
+      pointer-events: none;
+    }
+
+    .action-button.slide-in {
+      opacity: 0;
+      transform: translateX(30px) scale(0.95);
+    }
+
+    .action-button.visible {
+      opacity: 1;
+      transform: translateX(0) scale(1);
     }
 
     .action-button.host { 
@@ -1069,7 +1102,7 @@
     <!-- Botón crear sala -->
     <button id="createRoomBtn" 
             class="action-button host" 
-            style="display: none; opacity: 0;"
+            style="display: none;"
             aria-label="Create a new room as host">
       <span>🎮</span> 
       <span data-translate="createRoom">Create room</span>
@@ -1671,7 +1704,14 @@
         elements.roleJoin.closest('.role-card');
       
       selectedCard.setAttribute('aria-checked', 'true');
+      
+      // Animate selection with a subtle pulse
+      selectedCard.style.transform = 'scale(1.02)';
       selectedCard.classList.add('selected');
+      
+      setTimeout(() => {
+        selectedCard.style.transform = '';
+      }, 200);
       
       // Guardar rol seleccionado si la opción está activada
       if (elements.rememberChoice.checked) {
@@ -1688,53 +1728,44 @@
       const guestBox = document.querySelector('.guest-box');
       
       if (isJoin) {
-        // Fade out Join/Solo card
-        joinRoleCard.style.opacity = '0';
-        joinRoleCard.style.transform = 'translateY(-10px) scale(0.95)';
-        
-        // Fade out Create Room button
-        elements.createRoomBtn.style.opacity = '0';
-        elements.createRoomBtn.style.transform = 'translateY(-10px) scale(0.95)';
+        // Animate out elements
+        joinRoleCard.classList.add('fade-out');
+        elements.createRoomBtn.classList.add('slide-out');
         
         setTimeout(() => {
           joinRoleCard.style.display = 'none';
           elements.createRoomBtn.style.display = 'none';
           guestBox.classList.remove('compact');
           
-          // Fade in Join/Solo buttons
+          // Show and animate in new elements
           elements.joinRoomBtn.style.display = 'flex';
-          elements.joinRoomBtn.style.opacity = '0';
-          elements.joinRoomBtn.style.transform = 'translateY(10px) scale(0.95)';
-          
           elements.soloBtn.style.display = 'flex';
-          elements.soloBtn.style.marginTop = '8px';
-          elements.soloBtn.style.opacity = '0';
-          elements.soloBtn.style.transform = 'translateY(10px) scale(0.95)';
-          
-          // Fade in Host card
           hostRoleCard.style.display = 'flex';
-          hostRoleCard.style.opacity = '0';
-          hostRoleCard.style.transform = 'translateY(10px) scale(0.95)';
           
-          setTimeout(() => {
-            elements.joinRoomBtn.style.opacity = '1';
-            elements.joinRoomBtn.style.transform = 'translateY(0) scale(1)';
-            elements.soloBtn.style.opacity = '1';
-            elements.soloBtn.style.transform = 'translateY(0) scale(1)';
-            hostRoleCard.style.opacity = '1';
-            hostRoleCard.style.transform = 'translateY(0) scale(1)';
-          }, 150);
+          elements.joinRoomBtn.classList.add('slide-in');
+          elements.soloBtn.classList.add('slide-in');
+          hostRoleCard.classList.add('fade-in');
+          
+          requestAnimationFrame(() => {
+            elements.joinRoomBtn.classList.remove('slide-in');
+            elements.joinRoomBtn.classList.add('visible');
+            
+            setTimeout(() => {
+              elements.soloBtn.classList.remove('slide-in');
+              elements.soloBtn.classList.add('visible');
+            }, 100);
+            
+            setTimeout(() => {
+              hostRoleCard.classList.remove('fade-in');
+              hostRoleCard.classList.add('visible');
+            }, 200);
+          });
         }, 400);
       } else {
-        // Fade out Join/Solo buttons
-        elements.joinRoomBtn.style.opacity = '0';
-        elements.joinRoomBtn.style.transform = 'translateY(-10px) scale(0.95)';
-        elements.soloBtn.style.opacity = '0';
-        elements.soloBtn.style.transform = 'translateY(-10px) scale(0.95)';
-        
-        // Fade out Host card
-        hostRoleCard.style.opacity = '0';
-        hostRoleCard.style.transform = 'translateY(-10px) scale(0.95)';
+        // Animate out elements
+        elements.joinRoomBtn.classList.add('slide-out');
+        elements.soloBtn.classList.add('slide-out');
+        hostRoleCard.classList.add('fade-out');
         
         setTimeout(() => {
           elements.joinRoomBtn.style.display = 'none';
@@ -1742,24 +1773,32 @@
           hostRoleCard.style.display = 'none';
           guestBox.classList.add('compact');
           
-          // Fade in Join/Solo card
+          // Show and animate in new elements
           joinRoleCard.style.display = 'flex';
-          joinRoleCard.style.opacity = '0';
-          joinRoleCard.style.transform = 'translateY(10px) scale(0.95)';
-          
-          // Fade in Create Room button
           elements.createRoomBtn.style.display = 'flex';
-          elements.createRoomBtn.style.opacity = '0';
-          elements.createRoomBtn.style.transform = 'translateY(10px) scale(0.95)';
           
-          setTimeout(() => {
-            joinRoleCard.style.opacity = '1';
-            joinRoleCard.style.transform = 'translateY(0) scale(1)';
-            elements.createRoomBtn.style.opacity = '1';
-            elements.createRoomBtn.style.transform = 'translateY(0) scale(1)';
-          }, 150);
+          joinRoleCard.classList.add('fade-in');
+          elements.createRoomBtn.classList.add('slide-in');
+          
+          requestAnimationFrame(() => {
+            joinRoleCard.classList.remove('fade-in');
+            joinRoleCard.classList.add('visible');
+            
+            setTimeout(() => {
+              elements.createRoomBtn.classList.remove('slide-in');
+              elements.createRoomBtn.classList.add('visible');
+              elements.createRoomBtn.style.opacity = '1';
+            }, 100);
+          });
         }, 400);
       }
+      
+      // Clean up classes after animations
+      setTimeout(() => {
+        [joinRoleCard, hostRoleCard, elements.joinRoomBtn, elements.soloBtn, elements.createRoomBtn].forEach(el => {
+          el.classList.remove('fade-out', 'fade-in', 'slide-out', 'slide-in', 'visible');
+        });
+      }, 800);
     }
 
     // ====================== GESTIÓN DE VENTANAS ======================
