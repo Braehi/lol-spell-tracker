@@ -1073,6 +1073,7 @@
       // Animación normal para otros campeones
       elements.nicknameInput.value = randomChampion;
       elements.nicknameInput.dispatchEvent(new Event('input'));
+      updatePreview();
     }
 
     const elements = {
@@ -1515,6 +1516,11 @@
         
         // Real-time validation
         validateNicknameRealTime(nickname);
+        
+        // Update preview when typing (unless Diana is active)
+        if (!dianaEffectsActive) {
+          updatePreview();
+        }
         
         // Clear error messages
         elements.nicknameError.classList.remove('show');
