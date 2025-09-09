@@ -2177,10 +2177,30 @@
           
           if (data.a === 'hello') {
             const sanitizedNick = sanitizeNickname(data.nick);
-            connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
-            
-            // Immediately update players bar to show new player with champion
-            updatePlayersBar();
+            const existingPlayer = connectedPlayers.get(data.from);
+            if (!existingPlayer) {
+              connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
+              // Immediately update players bar to show new player with champion
+              updatePlayersBar();
+            } else {
+              let hasChanged = false;
+              if (existingPlayer.nick !== sanitizedNick) {
+                existingPlayer.nick = sanitizedNick;
+                hasChanged = true;
+              }
+              if (existingPlayer.champion !== data.champion) {
+                existingPlayer.champion = data.champion;
+                hasChanged = true;
+              }
+              if (existingPlayer.color !== data.color) {
+                existingPlayer.color = data.color;
+                hasChanged = true;
+              }
+              existingPlayer.lastPong = Date.now();
+              if (hasChanged) {
+                updatePlayersBar();
+              }
+            }
             
             setTimeout(() => {
               conn.send({ a: 'hostInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
@@ -2892,8 +2912,29 @@
 
       if (data.a === 'hello') {
         const sanitizedNick = sanitizeNickname(data.nick);
-        connectedPlayers.set(data.from, { nick: sanitizedNick, champion: data.champion, color: data.color, lastPong: Date.now() });
-        updatePlayersBar();
+        const existingPlayer = connectedPlayers.get(data.from);
+        if (!existingPlayer) {
+          connectedPlayers.set(data.from, { nick: sanitizedNick, champion: data.champion, color: data.color, lastPong: Date.now() });
+          updatePlayersBar();
+        } else {
+          let hasChanged = false;
+          if (existingPlayer.nick !== sanitizedNick) {
+            existingPlayer.nick = sanitizedNick;
+            hasChanged = true;
+          }
+          if (existingPlayer.champion !== data.champion) {
+            existingPlayer.champion = data.champion;
+            hasChanged = true;
+          }
+          if (existingPlayer.color !== data.color) {
+            existingPlayer.color = data.color;
+            hasChanged = true;
+          }
+          existingPlayer.lastPong = Date.now();
+          if (hasChanged) {
+            updatePlayersBar();
+          }
+        }
         if (isHost) {
           broadcastPlayerList();
           const conn = connections.find(c => c.peer === data.from);
@@ -3655,7 +3696,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.6 - 9/9/25 - launcher color preview fix, complete p2p sync fix
+    Lol Spell Tracker v0.2.7 - 9/9/25 - no-save color respect, final p2p sync fix
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>

@@ -769,7 +769,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.2.6 - 9/9/25 - launcher color preview fix, complete p2p sync fix
+      Lol Spell Tracker v0.2.7 - 9/9/25 - no-save color respect, final p2p sync fix
     </div>
   </div>
 
@@ -1936,10 +1936,15 @@
           // Obtener color del selector o del color picker
           const colorSelect = document.getElementById('userColor');
           const colorPicker = document.getElementById('colorPicker');
+          const noSaveElement = document.getElementById('noSaveOptions');
+          const noSaveActive = noSaveElement ? noSaveElement.checked : false;
+          
           if (colorSelect.value && colorSelect.value !== 'custom') {
             selectedColor = colorSelect.value;
-          } else if (colorSelect.value === 'custom' || localStorage.getItem('user-color')) {
-            selectedColor = localStorage.getItem('user-color') || colorPicker.value;
+          } else if (colorSelect.value === 'custom') {
+            selectedColor = colorPicker.value;
+          } else if (!noSaveActive) {
+            selectedColor = localStorage.getItem('user-color');
           }
         }
         
