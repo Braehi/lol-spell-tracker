@@ -2949,8 +2949,68 @@
               shortId = myBackupId;
               hostNickname = sanitizeNickname(userNickname);
               
-              // Mantener conexiones P2P existentes
+              // Mantener conexiones P2P existentes y reconfigurarlas como host
               connections = Array.from(peerConnections.values()).filter(conn => conn.open);
+              
+              // Reconfigurar cada conexión para que tenga los listeners de host
+              connections.forEach(conn => {
+                // Remover listeners P2P existentes
+                conn.removeAllListeners('data');
+                
+                // Configurar listener de host (idéntico a setupConnection)
+                conn.on('data', (data) => {
+                  if (!validateEventData(data)) return;
+                  
+                  if (data.a === 'playerInfo') {
+                    const sanitizedNick = sanitizeNickname(data.nick);
+                    const existingPlayer = connectedPlayers.get(data.from);
+                    let hasChanged = false;
+                    
+                    if (!existingPlayer) {
+                      connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
+                      hasChanged = true;
+                    } else {
+                      if (existingPlayer.nick !== sanitizedNick) {
+                        existingPlayer.nick = sanitizedNick;
+                        hasChanged = true;
+                      }
+                      if (existingPlayer.champion !== data.champion) {
+                        existingPlayer.champion = data.champion;
+                        hasChanged = true;
+                      }
+                      if (existingPlayer.color !== data.color) {
+                        existingPlayer.color = data.color;
+                        hasChanged = true;
+                      }
+                      existingPlayer.lastPong = Date.now();
+                    }
+                    
+                    if (hasChanged) {
+                      updatePlayersBar();
+                      // Retransmitir a todos los otros invitados
+                      connections.forEach(otherConn => {
+                        if (otherConn !== conn && otherConn.open) {
+                          try {
+                            otherConn.send({ a: 'playerUpdate', playerId: data.from, nick: sanitizedNick, champion: data.champion, color: data.color });
+                          } catch (e) {}
+                        }
+                      });
+                    }
+                  } else {
+                    // Manejar otros eventos y retransmitir
+                    if (['start', 'reset', 'adjust', 'startSecondary', 'resetSecondary', 'changeSpell', 'startGame', 'resetAll', 'unleashedTeleport', 'secondaryHostDesignated', 'secondaryHostIdUpdate'].includes(data.a)) {
+                      connections.forEach(otherConn => {
+                        if (otherConn !== conn && otherConn.open) {
+                          try {
+                            otherConn.send(data);
+                          } catch (e) {}
+                        }
+                      });
+                    }
+                  }
+                  handleSync(data);
+                });
+              });
               
               // Restaurar jugadores de conexiones P2P
               connectedPlayers.clear();
@@ -3451,8 +3511,68 @@
           shortId = myBackupId;
           hostNickname = sanitizeNickname(userNickname);
           
-          // Mantener conexiones P2P existentes
+          // Mantener conexiones P2P existentes y reconfigurarlas como host
           connections = Array.from(peerConnections.values()).filter(conn => conn.open);
+          
+          // Reconfigurar cada conexión para que tenga los listeners de host
+          connections.forEach(conn => {
+            // Remover listeners P2P existentes
+            conn.removeAllListeners('data');
+            
+            // Configurar listener de host (idéntico a setupConnection)
+            conn.on('data', (data) => {
+              if (!validateEventData(data)) return;
+              
+              if (data.a === 'playerInfo') {
+                const sanitizedNick = sanitizeNickname(data.nick);
+                const existingPlayer = connectedPlayers.get(data.from);
+                let hasChanged = false;
+                
+                if (!existingPlayer) {
+                  connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
+                  hasChanged = true;
+                } else {
+                  if (existingPlayer.nick !== sanitizedNick) {
+                    existingPlayer.nick = sanitizedNick;
+                    hasChanged = true;
+                  }
+                  if (existingPlayer.champion !== data.champion) {
+                    existingPlayer.champion = data.champion;
+                    hasChanged = true;
+                  }
+                  if (existingPlayer.color !== data.color) {
+                    existingPlayer.color = data.color;
+                    hasChanged = true;
+                  }
+                  existingPlayer.lastPong = Date.now();
+                }
+                
+                if (hasChanged) {
+                  updatePlayersBar();
+                  // Retransmitir a todos los otros invitados
+                  connections.forEach(otherConn => {
+                    if (otherConn !== conn && otherConn.open) {
+                      try {
+                        otherConn.send({ a: 'playerUpdate', playerId: data.from, nick: sanitizedNick, champion: data.champion, color: data.color });
+                      } catch (e) {}
+                    }
+                  });
+                }
+              } else {
+                // Manejar otros eventos y retransmitir
+                if (['start', 'reset', 'adjust', 'startSecondary', 'resetSecondary', 'changeSpell', 'startGame', 'resetAll', 'unleashedTeleport', 'secondaryHostDesignated', 'secondaryHostIdUpdate'].includes(data.a)) {
+                  connections.forEach(otherConn => {
+                    if (otherConn !== conn && otherConn.open) {
+                      try {
+                        otherConn.send(data);
+                      } catch (e) {}
+                    }
+                  });
+                }
+              }
+              handleSync(data);
+            });
+          });
           
           connectedPlayers.clear();
           connectedPlayers.set(myPeerId, { nick: sanitizeNickname(userNickname), lastPong: Date.now(), isSelf: true });
@@ -3596,7 +3716,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.9 - 9/9/25 - centralized player info sync via host
+    Lol Spell Tracker v0.2.10 - 9/9/25 - secondary host identical behavior fix
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
