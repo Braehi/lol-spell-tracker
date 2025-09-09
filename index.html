@@ -772,7 +772,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.2.12 - 9/9/25 - temp randomize button for testing
+      Lol Spell Tracker v0.2.13 - 9/9/25 - fix player info transfer and sync
     </div>
   </div>
 
@@ -1440,8 +1440,8 @@
         theme: document.body.classList.contains('light-theme') ? 'light' : 'dark',
         lang: currentLang,
         diana: dianaEffectsActive,
-        champion: dianaEffectsActive ? 'Diana' : selectedChampion,
-        color: dianaEffectsActive ? 'linear-gradient(45deg, #ffffff, #87ceeb)' : localStorage.getItem('user-color')
+        champion: dianaEffectsActive ? 'Diana' : (localStorage.getItem('selected-champion') || null),
+        color: dianaEffectsActive ? 'linear-gradient(45deg, #ffffff, #87ceeb)' : (localStorage.getItem('user-color') || null)
       };
       
       sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(config));

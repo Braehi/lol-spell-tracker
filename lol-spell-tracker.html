@@ -2470,7 +2470,6 @@
                 const peerConn = peer.connect(peerId);
                 peerConn.on('open', () => {
                   peerConnections.set(peerId, peerConn);
-                  peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                   
                   // Configurar manejo de datos P2P
                   peerConn.on('data', (peerData) => {
@@ -2610,7 +2609,7 @@
               testConnection.on('open', () => {
                 clearTimeout(timeout);
                 myConnection = testConnection;
-                myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+                myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
                 
                 heartbeatInterval = setInterval(() => {
                   if (myConnection && myConnection.open) {
@@ -2644,7 +2643,6 @@
                         const peerConn = peer.connect(peerId);
                         peerConn.on('open', () => {
                           peerConnections.set(peerId, peerConn);
-                          peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                           
                           peerConn.on('data', (peerData) => {
                             // Solo manejar eventos de juego, no info de jugador
@@ -2662,7 +2660,7 @@
                   } else if (data.a === 'requestNick') {
                     // Responder con mi nick cuando el host lo solicite
                     if (myConnection && myConnection.open) {
-                      myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+                      myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
                     }
                   } else if (data.a === 'heartbeat') {
                     if (myConnection && myConnection.open) {
@@ -3348,7 +3346,7 @@
       if (!isHost) return;
       const list = Array.from(connectedPlayers.entries())
         .filter(([key, value]) => !value.isSelf)
-        .map(([key, value]) => [key, { nick: value.nick, champion: value.champion }]);
+        .map(([key, value]) => [key, { nick: value.nick, champion: value.champion, color: value.color }]);
       
       list.unshift([myPeerId, { nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor }]);
 
@@ -3606,7 +3604,7 @@
         testConnection.on('open', () => {
           clearTimeout(timeout);
           myConnection = testConnection;
-          myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+          myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
           
           heartbeatInterval = setInterval(() => {
             if (myConnection && myConnection.open) {
@@ -3641,7 +3639,6 @@
                   const peerConn = peer.connect(peerId);
                   peerConn.on('open', () => {
                     peerConnections.set(peerId, peerConn);
-                    peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                     
                     peerConn.on('data', (peerData) => {
                       // Solo manejar eventos de juego, no info de jugador
@@ -3714,7 +3711,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.12 - 9/9/25 - temp randomize button for testing
+    Lol Spell Tracker v0.2.13 - 9/9/25 - fix player info transfer and sync
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
