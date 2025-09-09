@@ -1141,6 +1141,11 @@
       
       updatePlayersBar();
       
+      // 1.6. Queda a la espera de conexiones entrantes
+      if (peer && peer.open) {
+        startHostMonitoring();
+      }
+      
       // 1.7. Mostrar mensaje
       showToast(lang === 'es' ? '👑 Eres el host.' : '👑 You are the host.', 'info', 3000);
     }
@@ -1177,14 +1182,41 @@
             clearTimeout(timeout);
             myConnection = testConnection;
             
-            // 6.4. Conecta exitosamente - 6.5. Repetir punto 2
-            myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+            // 6.4. Conecta exitosamente - 6.5. Repetir punto 2 completo
+            setTimeout(() => {
+              // 2.1. Enviar información al host
+              myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+            
+              // Iniciar heartbeat
+              heartbeatInterval = setInterval(() => {
+                if (myConnection && myConnection.open) {
+                  myConnection.send({ a: 'heartbeat', from: myPeerId });
+                }
+              }, 2000);
+            }, 50);
             
             myConnection.on('data', (data) => {
-              handleSync(data);
+              if (!validateEventData(data)) return;
+              
+              if (data.a === 'heartbeat') {
+                // Responder al heartbeat del HOST
+                myConnection.send({ a: 'heartbeatAck', from: myPeerId });
+              } else if (data.a === 'connectionSuccess') {
+                // 2.2-2.5. Procesar respuesta del host como en punto 2
+                handleSync(data);
+                
+                // Mostrar mensaje de reconexión exitosa
+                const hostName = data.playersList[0][1].nick;
+                showToast(lang === 'es' ? 
+                  `✓ Reconectado a "${hostName}"` : 
+                  `✓ Reconnected to "${hostName}"`, 'success', 3000);
+              } else {
+                handleSync(data);
+              }
             });
             
             myConnection.on('close', () => {
+              if (heartbeatInterval) clearInterval(heartbeatInterval);
               attemptReconnectionWithRetries();
             });
           });
@@ -1994,9 +2026,19 @@
         } else {
           // Invitados solo aceptan conexiones P2P para sincronización de temporizadores
           peerConnections.set(conn.peer, conn);
+          
           conn.on('data', (peerData) => {
-            // Solo manejar eventos de temporizadores, no información de jugadores
-            handleSync(peerData);
+            if (peerData.a === 'p2pHeartbeat') {
+              // Responder heartbeat P2P - SOLO para mantener conexión
+              try {
+                conn.send({ a: 'p2pHeartbeatAck', from: myPeerId });
+              } catch (e) {}
+            } else if (peerData.a === 'p2pHeartbeatAck') {
+              // Heartbeat confirmado - conexión viva
+            } else {
+              // Solo manejar eventos de temporizadores, no información de jugadores
+              handleSync(peerData);
+            }
           });
           
           conn.on('close', () => {
@@ -2101,13 +2143,10 @@
           } else if (data.a === 'hostInfo') {
             hostNickname = sanitizeNickname(data.nick);
           } else if (data.a === 'heartbeat') {
-            // Recibir heartbeat de invitado
-            if (data.nick && data.from) {
-              const player = connectedPlayers.get(data.from);
-              if (player) {
-                player.nick = sanitizeNickname(data.nick);
-                player.lastPong = Date.now();
-              }
+            // Recibir heartbeat de invitado - SOLO para mantener conexión viva
+            const player = connectedPlayers.get(data.from);
+            if (player) {
+              player.lastPong = Date.now();
             }
             conn.send({ a: 'heartbeatAck', from: myPeerId });
           } else if (data.a === 'heartbeatAck') {
@@ -2260,9 +2299,9 @@
         // Iniciar heartbeat
         heartbeatInterval = setInterval(() => {
           if (myConnection && myConnection.open) {
-            myConnection.send({ a: 'heartbeat', from: myPeerId, nick: sanitizeNickname(userNickname) });
+            myConnection.send({ a: 'heartbeat', from: myPeerId });
           }
-        }, 3000);
+        }, 2000);
         }, 50);
         
         myConnection.on('data', (data) => {
@@ -2334,14 +2373,41 @@
                 const peerConn = peer.connect(peerId);
                 peerConn.on('open', () => {
                   peerConnections.set(peerId, peerConn);
+                  
+                  // 3.1. Heartbeat SOLO para mantener conexión viva
+                  const heartbeat = setInterval(() => {
+                    if (peerConn.open) {
+                      try {
+                        peerConn.send({ a: 'p2pHeartbeat', from: myPeerId });
+                      } catch (e) {
+                        clearInterval(heartbeat);
+                      }
+                    } else {
+                      clearInterval(heartbeat);
+                    }
+                  }, 5000);
+                  
+                  peerConn.heartbeatInterval = heartbeat;
                 });
                 
                 peerConn.on('data', (peerData) => {
-                  // Solo manejar eventos de temporizadores
-                  handleSync(peerData);
+                  if (peerData.a === 'p2pHeartbeat') {
+                    // Responder heartbeat P2P - SOLO para mantener conexión
+                    try {
+                      peerConn.send({ a: 'p2pHeartbeatAck', from: myPeerId });
+                    } catch (e) {}
+                  } else if (peerData.a === 'p2pHeartbeatAck') {
+                    // Heartbeat confirmado - conexión viva
+                  } else {
+                    // Solo manejar eventos de temporizadores
+                    handleSync(peerData);
+                  }
                 });
                 
                 peerConn.on('close', () => {
+                  if (peerConn.heartbeatInterval) {
+                    clearInterval(peerConn.heartbeatInterval);
+                  }
                   peerConnections.delete(peerId);
                 });
               }
@@ -2350,7 +2416,7 @@
             // HOST confirmó recepción de nuestro heartbeat - conexión viva
             if (hostLostTimeout) clearTimeout(hostLostTimeout);
             hostLostTimeout = setTimeout(() => {
-              // Si no recibimos heartbeat del host en 9s, considerarlo perdido
+              // Si no recibimos heartbeat del host en 5s, considerarlo perdido
               if (secondaryHostId === myPeerId) {
                 isHost = true;
                 shortId = myBackupId;
@@ -2361,7 +2427,7 @@
               } else {
                 attemptReconnectionWithRetries();
               }
-            }, 9000);
+            }, 5000);
           } else if (data.a === 'fullState') {
             applyFullState(data.state);
           } else if (data.a === 'newHostAnnouncement') {
@@ -2444,11 +2510,11 @@
         const now = Date.now();
         connections.forEach(conn => {
           try {
-            conn.send({ a: 'heartbeat', from: myPeerId, nick: sanitizeNickname(userNickname) });
+            conn.send({ a: 'heartbeat', from: myPeerId });
             pendingPings.set(conn.peer, now);
           } catch (e) {}
         });
-      }, 3000);
+      }, 2000);
 
       cleanupInterval = setInterval(() => {
         const now = Date.now();
@@ -2500,7 +2566,7 @@
           updatePlayersBar();
           broadcastPlayerList();
         }
-      }, 3000);
+      }, 2000);
     }
 
     // ====================== SINCRONIZACIÓN ======================
@@ -2575,6 +2641,21 @@
               color: playerData.color, 
               lastPong: Date.now() 
             });
+          }
+        });
+        
+        // 5.2. Eliminar conexiones P2P con jugadores desconectados
+        const currentPlayerIds = new Set(data.playersList.map(([id]) => id));
+        peerConnections.forEach((peerConn, peerId) => {
+          if (!currentPlayerIds.has(peerId)) {
+            // Jugador ya no está en la lista - cerrar conexión P2P
+            if (peerConn.heartbeatInterval) {
+              clearInterval(peerConn.heartbeatInterval);
+            }
+            try {
+              peerConn.close();
+            } catch (e) {}
+            peerConnections.delete(peerId);
           }
         });
         
@@ -3409,10 +3490,20 @@
       setupSyncPanel();
       if (!isSoloMode) {
         initPeer();
-      }
-      
-      // Inicializar host si corresponde (después de crear temporizadores)
-      if (isHost) {
+        
+        // Inicializar host si corresponde (después de crear la sala)
+        if (isHost) {
+          // Esperar a que peer esté listo antes de inicializar como host
+          if (peer && peer.open) {
+            initializeHost();
+          } else {
+            peer.on('open', () => {
+              initializeHost();
+            });
+          }
+        }
+      } else if (isHost) {
+        // En modo solo, inicializar sin peer
         initializeHost();
       }
       
@@ -3557,7 +3648,7 @@
             if (myConnection && myConnection.open) {
               myConnection.send({ a: 'heartbeat', from: myPeerId });
             }
-          }, 3000);
+          }, 2000);
           
           myConnection.on('data', (data) => {
             if (!validateEventData(data)) return;
@@ -3715,7 +3806,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.6.9 - 9/9/25 - fix DOMContentLoaded structure and host initialization
+    Lol Spell Tracker v0.7.0 - 9/9/25 - complete host/guest connection system with P2P heartbeat
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
