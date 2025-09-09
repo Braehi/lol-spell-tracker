@@ -1126,7 +1126,7 @@
     let hostLostTimeout = null;
     let playersBeforeDisconnect = new Map();
     let peerConnections = new Map();
-    let myBackupId = generateShortId(); // Mi ID de respaldo
+    let myBackupId = null; // Se genera cuando entra el primer invitado // Mi ID de respaldo
     let playerBackupIds = new Map(); // IDs de respaldo de otros jugadores
     let secondaryHostId = null; // ID del host secundario actual
     let secondaryHostBackupId = null; // ID de respaldo del host secundario
@@ -2115,25 +2115,15 @@
           }
           setupConnection(conn);
         } else {
-          // Invitados aceptan conexiones P2P
+          // Invitados solo aceptan conexiones P2P para sincronización de temporizadores
           peerConnections.set(conn.peer, conn);
-          conn.on('open', () => {
-            conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
-          });
-          
           conn.on('data', (peerData) => {
-            if (peerData.a === 'hello') {
-              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-              updatePlayersBar();
-            } else {
-              handleSync(peerData);
-            }
+            // Solo manejar eventos de temporizadores, no información de jugadores
+            handleSync(peerData);
           });
           
           conn.on('close', () => {
             peerConnections.delete(conn.peer);
-            connectedPlayers.delete(conn.peer);
-            updatePlayersBar();
           });
         }
       });
@@ -2152,62 +2142,43 @@
         conn.on('data', (data) => {
           if (!validateEventData(data)) return;
           
-          if (data.a === 'hello') {
+          if (data.a === 'playerInfo') {
+            // PASO 2: Recibir información del invitado
             const sanitizedNick = sanitizeNickname(data.nick);
-            connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
             
-            // Immediately update players bar to show new player with champion
+            // PASO 2.1: Actualizar lista de jugadores
+            connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
             updatePlayersBar();
             
-            setTimeout(() => {
-              conn.send({ a: 'hostInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
-              
-              const list = Array.from(connectedPlayers.entries())
-                .filter(([key, value]) => !value.isSelf)
-                .map(([key, value]) => [key, { nick: value.nick, champion: value.champion, color: value.color }]);
-              list.unshift([myPeerId, { nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor }]);
-              conn.send({ a: 'playerList', players: list });
-              
-              // Designar host secundario (primer invitado) - TANTO host original como secundario
-              const guestPlayers = Array.from(connectedPlayers.keys()).filter(id => !connectedPlayers.get(id).isSelf);
-              if (guestPlayers.length === 1) {
-                secondaryHostId = data.from;
-                secondaryHostBackupId = generateShortId(); // Host genera la backup ID
-                
-                // Enviar a todos los jugadores conectados
-                sendEvent({
-                  a: 'secondaryHostDesignated',
-                  secondaryHostId: data.from,
-                  joinOrder: guestPlayers
-                });
-                
-                // Enviar backup ID al host secundario
-                conn.send({ a: 'secondaryHostBackupId', id: secondaryHostBackupId, from: myPeerId });
-                
-                // Actualizar UI inmediatamente
-                updatePlayersBar();
-              }
-              
-              // Enviar información completa
-              conn.send({ a: 'backupId', id: myBackupId, from: myPeerId });
-              conn.send({ a: 'secondaryHostInfo', secondaryHostId, joinOrder: guestPlayers });
-              
-              // Enviar lista de otros jugadores para conexiones P2P
-              const otherPlayers = Array.from(connectedPlayers.keys()).filter(id => id !== data.from && id !== myPeerId);
+            const guestPlayers = Array.from(connectedPlayers.keys()).filter(id => !connectedPlayers.get(id).isSelf);
+            
+            // PASO 2.2 y 2.3: Si es el primer invitado, generar backupID y asignar host secundario
+            if (guestPlayers.length === 1) {
+              myBackupId = generateShortId();
+              secondaryHostId = data.from;
+              secondaryHostBackupId = generateShortId();
+            }
+            
+            // PASO 3: Enviar información actualizada
+            const playersList = Array.from(connectedPlayers.entries())
+              .map(([key, value]) => [key, { nick: value.nick, champion: value.champion, color: value.color }]);
+            playersList.unshift([myPeerId, { nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor }]);
+            
+            conn.send({ a: 'connectionSuccess', 
+              playersList: playersList,
+              hostBackupId: myBackupId,
+              secondaryHostId: secondaryHostId,
+              youAreSecondaryHost: (data.from === secondaryHostId),
+              yourBackupId: (data.from === secondaryHostId) ? secondaryHostBackupId : null
+            });
+            
+            // PASO 4: Establecer conexiones P2P para temporizadores
+            const otherPlayers = Array.from(connectedPlayers.keys()).filter(id => id !== data.from && id !== myPeerId);
+            if (otherPlayers.length > 0) {
               conn.send({ a: 'peerList', peers: otherPlayers });
-              
-              // Solo enviar backup ID del host secundario si existe
-              if (secondaryHostId && secondaryHostBackupId) {
-                conn.send({ a: 'secondaryHostBackupId', id: secondaryHostBackupId, from: secondaryHostId });
-              }
-              
-              // Enviar ID interna del host secundario si existe
-              if (secondaryHostId && secondaryHostBackupId) {
-                conn.send({ a: 'secondaryHostIdUpdate', secondaryHostId, secondaryHostBackupId });
-              }
-              
-              sendFullState(conn);
-            }, 100);
+            }
+            
+            sendFullState(conn);
             
             broadcastPlayerList();
             
@@ -2369,7 +2340,8 @@
       myConnection.on('open', () => {
         clearTimeout(connectionTimeout);
         setTimeout(() => {
-          myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+          // PASO 3: Enviar información al host
+          myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
         
         // Iniciar heartbeat
         heartbeatInterval = setInterval(() => {
@@ -2441,29 +2413,21 @@
             
             // El host ya envió mi backup ID
           } else if (data.a === 'peerList') {
-            // Crear conexiones P2P con otros jugadores
+            // PASO 5: Crear conexiones P2P solo para sincronización de temporizadores
             data.peers.forEach(peerId => {
               if (!peerConnections.has(peerId)) {
                 const peerConn = peer.connect(peerId);
                 peerConn.on('open', () => {
                   peerConnections.set(peerId, peerConn);
-                  peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
-                  
-                  // Configurar manejo de datos P2P
-                  peerConn.on('data', (peerData) => {
-                    if (peerData.a === 'hello') {
-                      connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                      updatePlayersBar();
-                    } else {
-                      handleSync(peerData);
-                    }
-                  });
-                  
-                  peerConn.on('close', () => {
-                    peerConnections.delete(peerId);
-                    connectedPlayers.delete(peerId);
-                    updatePlayersBar();
-                  });
+                });
+                
+                peerConn.on('data', (peerData) => {
+                  // Solo manejar eventos de temporizadores
+                  handleSync(peerData);
+                });
+                
+                peerConn.on('close', () => {
+                  peerConnections.delete(peerId);
                 });
               }
             });
@@ -2812,8 +2776,37 @@
       if (data.from === myPeerId) return;
       if (!validateEventData(data)) return;
 
-      // hello messages are handled directly in P2P connections, not here
-      if (data.a === 'hello') {
+      if (data.a === 'connectionSuccess') {
+        // Recibir información completa del host
+        // PASO 2.1: Borrar backupID/host secundario anterior
+        secondaryHostId = null;
+        secondaryHostBackupId = null;
+        
+        // Actualizar lista de jugadores
+        connectedPlayers.clear();
+        connectedPlayers.set(myPeerId, { nick: sanitizeNickname(userNickname), lastPong: Date.now(), isSelf: true });
+        
+        data.playersList.forEach(([playerId, playerData]) => {
+          if (playerId !== myPeerId) {
+            connectedPlayers.set(playerId, { 
+              nick: sanitizeNickname(playerData.nick), 
+              champion: playerData.champion, 
+              color: playerData.color, 
+              lastPong: Date.now() 
+            });
+          }
+        });
+        
+        // Guardar backupID del host y información de host secundario
+        hostBackupId = data.hostBackupId;
+        
+        if (data.youAreSecondaryHost) {
+          secondaryHostId = myPeerId;
+          secondaryHostBackupId = data.yourBackupId;
+          myBackupId = data.yourBackupId;
+        }
+        
+        updatePlayersBar();
         return;
       }
       
@@ -3645,7 +3638,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.17 - 9/9/25 - fix infinite hello loop causing high CPU
+    Lol Spell Tracker v0.3.1 - 9/9/25 - host schema implementation
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
