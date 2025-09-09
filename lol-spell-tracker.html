@@ -2125,7 +2125,6 @@
             if (peerData.a === 'hello') {
               connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
               updatePlayersBar();
-              conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
             } else {
               handleSync(peerData);
             }
@@ -2455,7 +2454,6 @@
                     if (peerData.a === 'hello') {
                       connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
                       updatePlayersBar();
-                      peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                     } else {
                       handleSync(peerData);
                     }
@@ -2633,7 +2631,6 @@
                             if (peerData.a === 'hello') {
                               connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
                               updatePlayersBar();
-                              peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                             } else {
                               handleSync(peerData);
                             }
@@ -3577,7 +3574,6 @@
                       if (peerData.a === 'hello') {
                         connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
                         updatePlayersBar();
-                        peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                       } else {
                         handleSync(peerData);
                       }
@@ -3649,7 +3645,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.16 - 9/9/25 - fix image flickering by removing double updatePlayersBar
+    Lol Spell Tracker v0.2.17 - 9/9/25 - fix infinite hello loop causing high CPU
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
