@@ -2117,9 +2117,7 @@
         } else {
           // Invitados aceptan conexiones P2P
           peerConnections.set(conn.peer, conn);
-          conn.on('open', () => {
-            conn.send({ a: 'playerInfo', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
-          });
+          // No enviar playerInfo a otros invitados - solo al host
           
           conn.on('data', (peerData) => {
             // Solo manejar eventos de juego, no info de jugador
@@ -3716,7 +3714,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.10 - 9/9/25 - secondary host identical behavior fix
+    Lol Spell Tracker v0.2.11 - 9/9/25 - remove p2p playerInfo, host-only routing
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
