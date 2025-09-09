@@ -2415,55 +2415,50 @@
           }
           handleSync(data);
         });
-      });
 
-      myConnection.on('close', () => {
-        clearTimeout(connectionTimeout);
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
-        
-        // 6. Cuando pierde conexión con el host
-        if (secondaryHostId === myPeerId) {
-          // 6.1.1. Soy host secundario - convertirme en host
-          isHost = true;
-          shortId = myBackupId;
-          hostNickname = sanitizeNickname(userNickname);
+        myConnection.on('close', () => {
+          clearTimeout(connectionTimeout);
+          if (heartbeatInterval) clearInterval(heartbeatInterval);
           
-          // 6.1.2. Ejecutar procedimientos de host desde punto 1
-          initializeHost();
-          setupSyncPanel();
-          initPeer();
-        } else {
-          // 6.2. No soy host secundario - intentar reconectar
-          attemptReconnectionWithRetries();
-        }
-          setTimeout(() => {
+          // 6. Cuando pierde conexión con el host
+          if (secondaryHostId === myPeerId) {
+            // 6.1.1. Soy host secundario - convertirme en host
             isHost = true;
-            shortId = secondaryHostBackupId; // Usar la ID asignada por el host
+            shortId = myBackupId;
             hostNickname = sanitizeNickname(userNickname);
             
-            // Limpiar completamente el estado como host original
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
-            if (hostLostTimeout) clearTimeout(hostLostTimeout);
-            if (pingInterval) clearInterval(pingInterval);
-            if (cleanupInterval) clearInterval(cleanupInterval);
-            
-            connections = [];
-            connectedPlayers.clear();
-            peerConnections.clear();
-            pendingPings.clear();
-            myPeerId = null; // Limpiar para que se actualice con la nueva ID de host
-            
-            // Limpiar información de host secundario al convertirse en host principal
-            secondaryHostId = null;
-            secondaryHostBackupId = null;
-            
+            // 6.1.2. Ejecutar procedimientos de host desde punto 1
+            initializeHost();
             setupSyncPanel();
             initPeer();
-          }, 1000);
-        } else {
-          // Solo intentar reconectar, NO ascender (solo el host secundario designado puede ascender)
+          } else {
+            // 6.2. No soy host secundario - intentar reconectar
+            attemptReconnectionWithRetries();
+          }
           
-          // Mostrar mensaje de reconexión y conectar al host secundario
+          myConnection = null;
+        });
+      });
+
+      myConnection.on('error', (err) => {
+        clearTimeout(connectionTimeout);
+        
+        // 1.2. Mensaje de error para ID incorrecta
+        showToast(lang === 'es' ? '❌ ID incorrecta o host no disponible' : '❌ Incorrect ID or host unavailable', 'error', 3000);
+        
+        const trans = translations[lang];
+        document.getElementById('clientStatus').innerHTML = `
+          <span class="error">❌ ${trans.error}: ${err.type}</span>
+          <span class="user-nick">${sanitizeNickname(userNickname)}</span>
+        `;
+        myConnection = null;
+        
+        document.getElementById('joinBtn').disabled = false;
+        document.getElementById('joinBtn').textContent = lang === 'es' ? 'Unirse' : 'Join';
+      });
+    }
+
+    // ====================== MONITOREO DEL HOST ======================
           const clientStatus = document.getElementById('clientStatus');
           if (clientStatus && secondaryHostBackupId) {
             clientStatus.innerHTML = `
@@ -3863,7 +3858,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.6.4 - 9/9/25 - fix function scope issues
+    Lol Spell Tracker v0.6.6 - 9/9/25 - fix brace structure errors
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
