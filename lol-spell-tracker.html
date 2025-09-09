@@ -2676,9 +2676,30 @@
                           
                           peerConn.on('data', (peerData) => {
                             if (peerData.a === 'hello') {
-                              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                              updatePlayersBar();
-                              peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                              const existingPlayer = connectedPlayers.get(peerData.from);
+                              if (!existingPlayer) {
+                                connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+                                updatePlayersBar();
+                                peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                              } else {
+                                let hasChanged = false;
+                                if (existingPlayer.nick !== sanitizeNickname(peerData.nick)) {
+                                  existingPlayer.nick = sanitizeNickname(peerData.nick);
+                                  hasChanged = true;
+                                }
+                                if (existingPlayer.champion !== peerData.champion) {
+                                  existingPlayer.champion = peerData.champion;
+                                  hasChanged = true;
+                                }
+                                if (existingPlayer.color !== peerData.color) {
+                                  existingPlayer.color = peerData.color;
+                                  hasChanged = true;
+                                }
+                                existingPlayer.lastPong = Date.now();
+                                if (hasChanged) {
+                                  updatePlayersBar();
+                                }
+                              }
                             } else {
                               handleSync(peerData);
                             }
@@ -3539,9 +3560,30 @@
                     
                     peerConn.on('data', (peerData) => {
                       if (peerData.a === 'hello') {
-                        connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                        updatePlayersBar();
-                        peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                        const existingPlayer = connectedPlayers.get(peerData.from);
+                        if (!existingPlayer) {
+                          connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+                          updatePlayersBar();
+                          peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                        } else {
+                          let hasChanged = false;
+                          if (existingPlayer.nick !== sanitizeNickname(peerData.nick)) {
+                            existingPlayer.nick = sanitizeNickname(peerData.nick);
+                            hasChanged = true;
+                          }
+                          if (existingPlayer.champion !== peerData.champion) {
+                            existingPlayer.champion = peerData.champion;
+                            hasChanged = true;
+                          }
+                          if (existingPlayer.color !== peerData.color) {
+                            existingPlayer.color = peerData.color;
+                            hasChanged = true;
+                          }
+                          existingPlayer.lastPong = Date.now();
+                          if (hasChanged) {
+                            updatePlayersBar();
+                          }
+                        }
                       } else {
                         handleSync(peerData);
                       }
@@ -3613,7 +3655,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.5 - 9/9/25 - p2p selective updates, champion/color sync fix
+    Lol Spell Tracker v0.2.6 - 9/9/25 - launcher color preview fix, complete p2p sync fix
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>

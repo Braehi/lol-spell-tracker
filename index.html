@@ -769,7 +769,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.2.5 - 9/9/25 - p2p selective updates, champion/color sync fix
+      Lol Spell Tracker v0.2.6 - 9/9/25 - launcher color preview fix, complete p2p sync fix
     </div>
   </div>
 
@@ -1929,7 +1929,19 @@
         
         // Get current champion and color (use temporary Diana settings if active)
         const selectedChampion = dianaEffectsActive ? 'Diana' : localStorage.getItem('selected-champion');
-        const selectedColor = dianaEffectsActive ? 'linear-gradient(45deg, #ffffff, #87ceeb)' : localStorage.getItem('user-color');
+        let selectedColor;
+        if (dianaEffectsActive) {
+          selectedColor = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        } else {
+          // Obtener color del selector o del color picker
+          const colorSelect = document.getElementById('userColor');
+          const colorPicker = document.getElementById('colorPicker');
+          if (colorSelect.value && colorSelect.value !== 'custom') {
+            selectedColor = colorSelect.value;
+          } else if (colorSelect.value === 'custom' || localStorage.getItem('user-color')) {
+            selectedColor = localStorage.getItem('user-color') || colorPicker.value;
+          }
+        }
         
         // Update both previews
         [previewContainer, previewTop].forEach(container => {
