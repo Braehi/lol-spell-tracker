@@ -772,7 +772,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.2.13 - 9/9/25 - fix player info transfer and sync
+      Lol Spell Tracker v0.2.14 - 9/9/25 - fix no-save options data transfer
     </div>
   </div>
 
@@ -1410,7 +1410,9 @@
 
     function launchApp(role) {
       let nickname = elements.nicknameInput.value.trim();
-      const selectedChampion = localStorage.getItem('selected-champion');
+      // Obtener campeón actual del DOM, no del localStorage
+      const championInput = document.getElementById('championInput');
+      const selectedChampion = championInput.value.trim() || null;
       let isUsingRandomName = false;
       
       // Si hay campeón seleccionado pero no hay nombre, mostrar error
@@ -1433,6 +1435,20 @@
       
       addToRecentNames(nickname);
 
+      // Obtener color actual del DOM
+      let currentColor = null;
+      if (dianaEffectsActive) {
+        currentColor = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+      } else {
+        const colorSelect = document.getElementById('userColor');
+        const colorPicker = document.getElementById('colorPicker');
+        if (colorSelect.value && colorSelect.value !== 'custom') {
+          currentColor = colorSelect.value;
+        } else if (colorSelect.value === 'custom') {
+          currentColor = colorPicker.value;
+        }
+      }
+      
       // Usar sessionStorage para transferir datos entre ventanas
       const config = {
         nick: nickname,
@@ -1440,8 +1456,8 @@
         theme: document.body.classList.contains('light-theme') ? 'light' : 'dark',
         lang: currentLang,
         diana: dianaEffectsActive,
-        champion: dianaEffectsActive ? 'Diana' : (localStorage.getItem('selected-champion') || null),
-        color: dianaEffectsActive ? 'linear-gradient(45deg, #ffffff, #87ceeb)' : (localStorage.getItem('user-color') || null)
+        champion: dianaEffectsActive ? 'Diana' : selectedChampion,
+        color: currentColor
       };
       
       sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(config));
