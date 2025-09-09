@@ -2118,39 +2118,12 @@
           // Invitados aceptan conexiones P2P
           peerConnections.set(conn.peer, conn);
           conn.on('open', () => {
-            conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+            conn.send({ a: 'playerInfo', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
           });
           
           conn.on('data', (peerData) => {
-            if (peerData.a === 'hello') {
-              const existingPlayer = connectedPlayers.get(peerData.from);
-              if (!existingPlayer) {
-                connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                updatePlayersBar();
-                conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
-              } else {
-                // Actualizar información si ha cambiado
-                let hasChanged = false;
-                if (existingPlayer.nick !== sanitizeNickname(peerData.nick)) {
-                  existingPlayer.nick = sanitizeNickname(peerData.nick);
-                  hasChanged = true;
-                }
-                if (existingPlayer.champion !== peerData.champion) {
-                  existingPlayer.champion = peerData.champion;
-                  hasChanged = true;
-                }
-                if (existingPlayer.color !== peerData.color) {
-                  existingPlayer.color = peerData.color;
-                  hasChanged = true;
-                }
-                existingPlayer.lastPong = Date.now();
-                if (hasChanged) {
-                  updatePlayersBar();
-                }
-              }
-            } else {
-              handleSync(peerData);
-            }
+            // Solo manejar eventos de juego, no info de jugador
+            handleSync(peerData);
           });
           
           conn.on('close', () => {
@@ -2175,15 +2148,15 @@
         conn.on('data', (data) => {
           if (!validateEventData(data)) return;
           
-          if (data.a === 'hello') {
+          if (data.a === 'playerInfo') {
             const sanitizedNick = sanitizeNickname(data.nick);
             const existingPlayer = connectedPlayers.get(data.from);
+            let hasChanged = false;
+            
             if (!existingPlayer) {
               connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
-              // Immediately update players bar to show new player with champion
-              updatePlayersBar();
+              hasChanged = true;
             } else {
-              let hasChanged = false;
               if (existingPlayer.nick !== sanitizedNick) {
                 existingPlayer.nick = sanitizedNick;
                 hasChanged = true;
@@ -2197,9 +2170,18 @@
                 hasChanged = true;
               }
               existingPlayer.lastPong = Date.now();
-              if (hasChanged) {
-                updatePlayersBar();
-              }
+            }
+            
+            if (hasChanged) {
+              updatePlayersBar();
+              // Retransmitir a todos los otros invitados
+              connections.forEach(otherConn => {
+                if (otherConn !== conn && otherConn.open) {
+                  try {
+                    otherConn.send({ a: 'playerUpdate', playerId: data.from, nick: sanitizedNick, champion: data.champion, color: data.color });
+                  } catch (e) {}
+                }
+              });
             }
             
             setTimeout(() => {
@@ -2412,7 +2394,7 @@
       myConnection.on('open', () => {
         clearTimeout(connectionTimeout);
         setTimeout(() => {
-          myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+          myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
         
         // Iniciar heartbeat
         heartbeatInterval = setInterval(() => {
@@ -2494,36 +2476,8 @@
                   
                   // Configurar manejo de datos P2P
                   peerConn.on('data', (peerData) => {
-                    if (peerData.a === 'hello') {
-                      const existingPlayer = connectedPlayers.get(peerData.from);
-                      if (!existingPlayer) {
-                        connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                        updatePlayersBar();
-                        // Responder con mi información
-                        peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
-                      } else {
-                        // Actualizar información si ha cambiado
-                        let hasChanged = false;
-                        if (existingPlayer.nick !== sanitizeNickname(peerData.nick)) {
-                          existingPlayer.nick = sanitizeNickname(peerData.nick);
-                          hasChanged = true;
-                        }
-                        if (existingPlayer.champion !== peerData.champion) {
-                          existingPlayer.champion = peerData.champion;
-                          hasChanged = true;
-                        }
-                        if (existingPlayer.color !== peerData.color) {
-                          existingPlayer.color = peerData.color;
-                          hasChanged = true;
-                        }
-                        existingPlayer.lastPong = Date.now();
-                        if (hasChanged) {
-                          updatePlayersBar();
-                        }
-                      }
-                    } else {
-                      handleSync(peerData);
-                    }
+                    // Solo manejar eventos de juego, no info de jugador
+                    handleSync(peerData);
                   });
                   
                   peerConn.on('close', () => {
@@ -2695,34 +2649,8 @@
                           peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                           
                           peerConn.on('data', (peerData) => {
-                            if (peerData.a === 'hello') {
-                              const existingPlayer = connectedPlayers.get(peerData.from);
-                              if (!existingPlayer) {
-                                connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                                updatePlayersBar();
-                                peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
-                              } else {
-                                let hasChanged = false;
-                                if (existingPlayer.nick !== sanitizeNickname(peerData.nick)) {
-                                  existingPlayer.nick = sanitizeNickname(peerData.nick);
-                                  hasChanged = true;
-                                }
-                                if (existingPlayer.champion !== peerData.champion) {
-                                  existingPlayer.champion = peerData.champion;
-                                  hasChanged = true;
-                                }
-                                if (existingPlayer.color !== peerData.color) {
-                                  existingPlayer.color = peerData.color;
-                                  hasChanged = true;
-                                }
-                                existingPlayer.lastPong = Date.now();
-                                if (hasChanged) {
-                                  updatePlayersBar();
-                                }
-                              }
-                            } else {
-                              handleSync(peerData);
-                            }
+                            // Solo manejar eventos de juego, no info de jugador
+                            handleSync(peerData);
                           });
                           
                           peerConn.on('close', () => {
@@ -2901,14 +2829,15 @@
       if (data.from === myPeerId) return;
       if (!validateEventData(data)) return;
 
-      if (data.a === 'hello') {
+      if (data.a === 'playerUpdate') {
         const sanitizedNick = sanitizeNickname(data.nick);
-        const existingPlayer = connectedPlayers.get(data.from);
+        const existingPlayer = connectedPlayers.get(data.playerId);
+        let hasChanged = false;
+        
         if (!existingPlayer) {
-          connectedPlayers.set(data.from, { nick: sanitizedNick, champion: data.champion, color: data.color, lastPong: Date.now() });
-          updatePlayersBar();
+          connectedPlayers.set(data.playerId, { nick: sanitizedNick, champion: data.champion, color: data.color, lastPong: Date.now() });
+          hasChanged = true;
         } else {
-          let hasChanged = false;
           if (existingPlayer.nick !== sanitizedNick) {
             existingPlayer.nick = sanitizedNick;
             hasChanged = true;
@@ -2922,9 +2851,10 @@
             hasChanged = true;
           }
           existingPlayer.lastPong = Date.now();
-          if (hasChanged) {
-            updatePlayersBar();
-          }
+        }
+        
+        if (hasChanged) {
+          updatePlayersBar();
         }
         if (isHost) {
           broadcastPlayerList();
@@ -2961,6 +2891,11 @@
       if (data.a === 'playerJoined') {
         connectedPlayers.set(data.playerId, { nick: sanitizeNickname(data.nick), champion: data.champion, color: data.color, lastPong: Date.now() });
         updatePlayersBar();
+        return;
+      }
+      
+      if (data.a === 'playerInfo') {
+        // Los invitados no procesan playerInfo directamente - solo el host
         return;
       }
       
@@ -3591,34 +3526,8 @@
                     peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                     
                     peerConn.on('data', (peerData) => {
-                      if (peerData.a === 'hello') {
-                        const existingPlayer = connectedPlayers.get(peerData.from);
-                        if (!existingPlayer) {
-                          connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                          updatePlayersBar();
-                          peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
-                        } else {
-                          let hasChanged = false;
-                          if (existingPlayer.nick !== sanitizeNickname(peerData.nick)) {
-                            existingPlayer.nick = sanitizeNickname(peerData.nick);
-                            hasChanged = true;
-                          }
-                          if (existingPlayer.champion !== peerData.champion) {
-                            existingPlayer.champion = peerData.champion;
-                            hasChanged = true;
-                          }
-                          if (existingPlayer.color !== peerData.color) {
-                            existingPlayer.color = peerData.color;
-                            hasChanged = true;
-                          }
-                          existingPlayer.lastPong = Date.now();
-                          if (hasChanged) {
-                            updatePlayersBar();
-                          }
-                        }
-                      } else {
-                        handleSync(peerData);
-                      }
+                      // Solo manejar eventos de juego, no info de jugador
+                      handleSync(peerData);
                     });
                     
                     peerConn.on('close', () => {
@@ -3687,7 +3596,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.8 - 9/9/25 - guest-to-guest event sync fix
+    Lol Spell Tracker v0.2.9 - 9/9/25 - centralized player info sync via host
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
