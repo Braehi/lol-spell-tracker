@@ -1750,7 +1750,6 @@
       if (errorMsg.style.display === 'block') {
         errorMsg.textContent = lang === 'es' ? '¿Temporizadores incorrectos? Comprueba la hora del sistema.' : 'Wrong timers? Check system time.';
       }
-    });
 
     const themeSwitch = document.getElementById('themeSwitch');
     themeSwitch.addEventListener('change', () => {
@@ -2367,22 +2366,7 @@
                 attemptReconnectionWithRetries();
               }
             }, 9000);
-              if (secondaryHostId === myPeerId) {
-                // Soy el host secundario - ascender inmediatamente
-                isHost = true;
-                shortId = myBackupId;
-                hostNickname = sanitizeNickname(userNickname);
-                setupSyncPanel();
-                initPeer();
-              } else {
-                // Solo intentar reconectar con host secundario, NO ascender
-                if (secondaryHostBackupId) {
-                  connectToSecondaryHost();
-                } else {
-                  tryConnectToBackupHosts();
-                }
-              }
-            }, 10000);
+          }
           } else if (data.a === 'fullState') {
             applyFullState(data.state);
           } else if (data.a === 'newHostAnnouncement') {
@@ -2414,7 +2398,7 @@
             updatePlayersBar();
           }
           handleSync(data);
-        });
+        };
 
         myConnection.on('close', () => {
           clearTimeout(connectionTimeout);
@@ -2447,133 +2431,6 @@
         showToast(lang === 'es' ? '❌ ID incorrecta o host no disponible' : '❌ Incorrect ID or host unavailable', 'error', 3000);
         
         const trans = translations[lang];
-        document.getElementById('clientStatus').innerHTML = `
-          <span class="error">❌ ${trans.error}: ${err.type}</span>
-          <span class="user-nick">${sanitizeNickname(userNickname)}</span>
-        `;
-        myConnection = null;
-        
-        document.getElementById('joinBtn').disabled = false;
-        document.getElementById('joinBtn').textContent = lang === 'es' ? 'Unirse' : 'Join';
-      });
-    }
-
-    // ====================== MONITOREO DEL HOST ======================
-          const clientStatus = document.getElementById('clientStatus');
-          if (clientStatus && secondaryHostBackupId) {
-            clientStatus.innerHTML = `
-              <span style="color: #ffeb3b;">🔄 Reconectando con ${secondaryHostBackupId}</span>
-              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
-            `;
-          }
-          
-          setTimeout(() => {
-            if (secondaryHostBackupId) {
-              // Usar la ID almacenada del host secundario
-              const testConnection = peer.connect(`${secondaryHostBackupId}_host`);
-              
-              const timeout = setTimeout(() => {
-                testConnection.close();
-                tryConnectToBackupHosts();
-              }, 8000);
-              
-              testConnection.on('open', () => {
-                clearTimeout(timeout);
-                myConnection = testConnection;
-                myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
-                
-                heartbeatInterval = setInterval(() => {
-                  if (myConnection && myConnection.open) {
-                    myConnection.send({ a: 'heartbeat', from: myPeerId, nick: sanitizeNickname(userNickname) });
-                  }
-                }, 3000);
-                
-                myConnection.on('data', (data) => {
-                  if (!validateEventData(data)) return;
-                  
-                  if (data.a === 'hostInfo') {
-                    hostNickname = sanitizeNickname(data.nick);
-                    document.getElementById('clientStatus').innerHTML = `
-                      <span>✅ Conectado con <strong>${escapeHtml(hostNickname)}</strong></span>
-                      <span class="user-nick">${sanitizeNickname(userNickname)}</span>
-                    `;
-                    updatePlayersBar();
-                  } else if (data.a === 'playerList') {
-                    const list = new Map(data.players);
-                    connectedPlayers.clear();
-                    connectedPlayers.set(myPeerId, { nick: sanitizeNickname(userNickname), lastPong: Date.now(), isSelf: true });
-                    list.forEach((value, key) => {
-                      if (key !== myPeerId) {
-                        connectedPlayers.set(key, { ...value, nick: sanitizeNickname(value.nick), lastPong: Date.now() });
-                      }
-                    });
-                    updatePlayersBar();
-                  } else if (data.a === 'peerList') {
-                    data.peers.forEach(peerId => {
-                      if (!peerConnections.has(peerId)) {
-                        const peerConn = peer.connect(peerId);
-                        peerConn.on('open', () => {
-                          peerConnections.set(peerId, peerConn);
-                          peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
-                          
-                          peerConn.on('data', (peerData) => {
-                            if (peerData.a === 'hello') {
-                              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                              updatePlayersBar();
-                            } else {
-                              handleSync(peerData);
-                            }
-                          });
-                          
-                          peerConn.on('close', () => {
-                            peerConnections.delete(peerId);
-                            connectedPlayers.delete(peerId);
-                            updatePlayersBar();
-                          });
-                        });
-                      }
-                    });
-                  } else if (data.a === 'requestNick') {
-                    // Responder con mi nick cuando el host lo solicite
-                    if (myConnection && myConnection.open) {
-                      myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
-                    }
-                  } else if (data.a === 'heartbeat') {
-                    if (myConnection && myConnection.open) {
-                      myConnection.send({ a: 'heartbeatAck', from: myPeerId });
-                    }
-                  } else if (data.a === 'fullState') {
-                    applyFullState(data.state);
-                  }
-                  
-                  handleSync(data);
-                });
-                
-                myConnection.on('close', () => {
-                  if (heartbeatInterval) clearInterval(heartbeatInterval);
-                  myConnection = null;
-                });
-              });
-              
-              testConnection.on('error', () => {
-                clearTimeout(timeout);
-                tryConnectToBackupHosts();
-              });
-            } else {
-              tryConnectToBackupHosts();
-            }
-          }, 3000);
-        }
-        
-        myConnection = null;
-      });
-
-      myConnection.on('error', (err) => {
-        clearTimeout(connectionTimeout);
-        
-        // 1.2. Mensaje de error para ID incorrecta
-        showToast(lang === 'es' ? '❌ ID incorrecta o host no disponible' : '❌ Incorrect ID or host unavailable', 'error', 3000);
-        
         document.getElementById('clientStatus').innerHTML = `
           <span class="error">❌ ${trans.error}: ${err.type}</span>
           <span class="user-nick">${sanitizeNickname(userNickname)}</span>
@@ -3559,24 +3416,24 @@
         initPeer();
       }
       updateTexts();
-    });
-
-    function promoteToHost() {
-      if (isHost) return;
       
-      isHost = true;
-      shortId = generateShortId();
-      hostNickname = sanitizeNickname(userNickname);
+      // Funciones auxiliares
+      function promoteToHost() {
+        if (isHost) return;
+        
+        isHost = true;
+        shortId = generateShortId();
+        hostNickname = sanitizeNickname(userNickname);
+        
+        setupSyncPanel();
+        initPeer();
+        
+        setTimeout(() => {
+          updatePlayersBar();
+        }, 1000);
+      }
       
-      setupSyncPanel();
-      initPeer();
-      
-      setTimeout(() => {
-        updatePlayersBar();
-      }, 1000);
-    }
-    
-    function connectToSecondaryHost() {
+      function connectToSecondaryHost() {
       // Conectar igual que al host original
       const hostIdInput = document.getElementById('hostIdInput');
       if (hostIdInput) {
@@ -3788,8 +3645,7 @@
       
       updatePlayersBar();
     }
-    
-
+    });
 
     // ====================== FUNCIÓN SHOWTOAST ======================
     function showToast(message, type = 'info', duration = 3000) {
@@ -3858,7 +3714,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.6.6 - 9/9/25 - fix brace structure errors
+    Lol Spell Tracker v0.6.7 - 9/9/25 - fix syntax errors and code structure
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
