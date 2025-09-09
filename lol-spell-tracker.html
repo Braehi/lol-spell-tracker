@@ -2129,8 +2129,24 @@
                 updatePlayersBar();
                 conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
               } else {
-                // Solo actualizar timestamp si ya existe
+                // Actualizar información si ha cambiado
+                let hasChanged = false;
+                if (existingPlayer.nick !== sanitizeNickname(peerData.nick)) {
+                  existingPlayer.nick = sanitizeNickname(peerData.nick);
+                  hasChanged = true;
+                }
+                if (existingPlayer.champion !== peerData.champion) {
+                  existingPlayer.champion = peerData.champion;
+                  hasChanged = true;
+                }
+                if (existingPlayer.color !== peerData.color) {
+                  existingPlayer.color = peerData.color;
+                  hasChanged = true;
+                }
                 existingPlayer.lastPong = Date.now();
+                if (hasChanged) {
+                  updatePlayersBar();
+                }
               }
             } else {
               handleSync(peerData);
@@ -2466,8 +2482,24 @@
                         // Responder con mi información
                         peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                       } else {
-                        // Solo actualizar timestamp si ya existe
+                        // Actualizar información si ha cambiado
+                        let hasChanged = false;
+                        if (existingPlayer.nick !== sanitizeNickname(peerData.nick)) {
+                          existingPlayer.nick = sanitizeNickname(peerData.nick);
+                          hasChanged = true;
+                        }
+                        if (existingPlayer.champion !== peerData.champion) {
+                          existingPlayer.champion = peerData.champion;
+                          hasChanged = true;
+                        }
+                        if (existingPlayer.color !== peerData.color) {
+                          existingPlayer.color = peerData.color;
+                          hasChanged = true;
+                        }
                         existingPlayer.lastPong = Date.now();
+                        if (hasChanged) {
+                          updatePlayersBar();
+                        }
                       }
                     } else {
                       handleSync(peerData);
