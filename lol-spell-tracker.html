@@ -945,11 +945,6 @@
     let isHost = userRole === 'host';
     let isSoloMode = userRole === 'solo';
     
-    // 1. Inicializar host si corresponde
-    if (isHost) {
-      initializeHost();
-    }
-    
     function getChampionFileName(championName) {
       // Special cases first
       const specialCases = {
@@ -1750,6 +1745,7 @@
       if (errorMsg.style.display === 'block') {
         errorMsg.textContent = lang === 'es' ? '¿Temporizadores incorrectos? Comprueba la hora del sistema.' : 'Wrong timers? Check system time.';
       }
+    });
 
     const themeSwitch = document.getElementById('themeSwitch');
     themeSwitch.addEventListener('change', () => {
@@ -2366,7 +2362,6 @@
                 attemptReconnectionWithRetries();
               }
             }, 9000);
-          }
           } else if (data.a === 'fullState') {
             applyFullState(data.state);
           } else if (data.a === 'newHostAnnouncement') {
@@ -2398,7 +2393,7 @@
             updatePlayersBar();
           }
           handleSync(data);
-        };
+        });
 
         myConnection.on('close', () => {
           clearTimeout(connectionTimeout);
@@ -3415,6 +3410,12 @@
       if (!isSoloMode) {
         initPeer();
       }
+      
+      // Inicializar host si corresponde (después de crear temporizadores)
+      if (isHost) {
+        initializeHost();
+      }
+      
       updateTexts();
       
       // Funciones auxiliares
@@ -3714,7 +3715,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.6.7 - 9/9/25 - fix syntax errors and code structure
+    Lol Spell Tracker v0.6.9 - 9/9/25 - fix DOMContentLoaded structure and host initialization
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
