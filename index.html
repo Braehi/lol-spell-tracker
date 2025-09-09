@@ -580,6 +580,8 @@
           🎲
         </div>
       </div>
+      
+      <button id="randomizeAll" style="width: 100%; padding: 6px 12px; background: #f39c12; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 12px; font-size: 0.8rem;">🎲 Random Champion + Color</button>
 
       <!-- Tarjeta: Unirse a sala -->
       <div class="role-card" 
@@ -1343,7 +1345,8 @@
       const { width, height } = getWindowSize();
       const opciones = `width=${width},height=${height},resizable=yes,scrollbars=no,titlebar=no,toolbar=no,location=no,status=no`;
 
-      const ventana = window.open(url, 'LoLFlashTracker', opciones);
+      const uniqueName = `LoLFlashTracker_${Date.now()}`;
+      const ventana = window.open(url, uniqueName, opciones);
       
       if (ventana) {
         if (elements.autoFocus.checked) {
@@ -1845,6 +1848,25 @@
       
       // Initial preview update
       updatePreview();
+
+      document.getElementById('randomizeAll').addEventListener('click', () => {
+        // Random champion
+        const randomChampion = getRandomChampion();
+        championInput.value = randomChampion;
+        updateChampionPreview(randomChampion);
+        
+        // Set champion name as nickname
+        elements.nicknameInput.value = randomChampion;
+        
+        // Random color
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7', '#a29bfe', '#fd79a8', '#00b894'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        userColorSelect.value = randomColor;
+        updateColorPreview(randomColor);
+        localStorage.setItem('user-color', randomColor);
+        
+        updatePreview();
+      });
 
       document.getElementById('testDiana').addEventListener('click', () => {
         const dianaName = currentLang === 'es' ? 'Diana, El desdén de la Luna' : 'Diana, Scorn of the Moon';

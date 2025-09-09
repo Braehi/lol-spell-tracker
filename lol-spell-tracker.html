@@ -1132,7 +1132,7 @@
     let playerBackupIds = new Map(); // IDs de respaldo de otros jugadores
     let secondaryHostId = null; // ID del host secundario actual
     let secondaryHostBackupId = null; // ID de respaldo del host secundario
-    let joinOrder = []; // Orden de entrada de jugadores
+    // joinOrder removed - derived from connectedPlayers
     let hostNickname = null;
     let hadHostConnection = false;
 
@@ -2109,15 +2109,37 @@
         }
       });
 
-      if (isHost) {
-        peer.on('connection', (conn) => {
+      peer.on('connection', (conn) => {
+        if (isHost) {
           if (connections.length >= 7) {
             conn.close();
             return;
           }
           setupConnection(conn);
-        });
-      }
+        } else {
+          // Invitados aceptan conexiones P2P
+          peerConnections.set(conn.peer, conn);
+          conn.on('open', () => {
+            conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+          });
+          
+          conn.on('data', (peerData) => {
+            if (peerData.a === 'hello') {
+              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+              updatePlayersBar();
+              conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+            } else {
+              handleSync(peerData);
+            }
+          });
+          
+          conn.on('close', () => {
+            peerConnections.delete(conn.peer);
+            connectedPlayers.delete(conn.peer);
+            updatePlayersBar();
+          });
+        }
+      });
     }
 
     // ====================== CONFIGURAR CONEXIÓN ======================
@@ -2149,32 +2171,38 @@
               list.unshift([myPeerId, { nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor }]);
               conn.send({ a: 'playerList', players: list });
               
-              // Añadir al orden de entrada
-              joinOrder.push(data.from);
-              
-              // Designar host secundario (primer invitado)
-              if (joinOrder.length === 1) {
+              // Designar host secundario (primer invitado) - TANTO host original como secundario
+              const guestPlayers = Array.from(connectedPlayers.keys()).filter(id => !connectedPlayers.get(id).isSelf);
+              if (guestPlayers.length === 1) {
                 secondaryHostId = data.from;
-                secondaryHostBackupId = null; // Se recibirá después
+                secondaryHostBackupId = generateShortId(); // Host genera la backup ID
                 
                 // Enviar a todos los jugadores conectados
                 sendEvent({
                   a: 'secondaryHostDesignated',
                   secondaryHostId: data.from,
-                  joinOrder: joinOrder
+                  joinOrder: guestPlayers
                 });
+                
+                // Enviar backup ID al host secundario
+                conn.send({ a: 'secondaryHostBackupId', id: secondaryHostBackupId, from: myPeerId });
+                
+                // Actualizar UI inmediatamente
+                updatePlayersBar();
               }
               
               // Enviar información completa
               conn.send({ a: 'backupId', id: myBackupId, from: myPeerId });
-              conn.send({ a: 'secondaryHostInfo', secondaryHostId, joinOrder });
+              conn.send({ a: 'secondaryHostInfo', secondaryHostId, joinOrder: guestPlayers });
               
               // Enviar lista de otros jugadores para conexiones P2P
               const otherPlayers = Array.from(connectedPlayers.keys()).filter(id => id !== data.from && id !== myPeerId);
               conn.send({ a: 'peerList', peers: otherPlayers });
               
-              const backupList = Array.from(playerBackupIds.entries());
-              conn.send({ a: 'allBackupIds', ids: backupList });
+              // Solo enviar backup ID del host secundario si existe
+              if (secondaryHostId && secondaryHostBackupId) {
+                conn.send({ a: 'secondaryHostBackupId', id: secondaryHostBackupId, from: secondaryHostId });
+              }
               
               // Enviar ID interna del host secundario si existe
               if (secondaryHostId && secondaryHostBackupId) {
@@ -2217,7 +2245,12 @@
               if (player) {
                 player.nick = sanitizeNickname(data.nick);
               } else {
-                connectedPlayers.set(data.from, { nick: sanitizeNickname(data.nick), lastPong: Date.now() });
+                // No crear jugador nuevo en heartbeat, solo actualizar si existe
+                const existingPlayer = connectedPlayers.get(data.from);
+                if (existingPlayer) {
+                  existingPlayer.nick = sanitizeNickname(data.nick);
+                  existingPlayer.lastPong = Date.now();
+                }
               }
             }
             conn.send({ a: 'heartbeatAck', from: data.from });
@@ -2263,21 +2296,21 @@
           
           // Si el host secundario se desconecta, designar nuevo host secundario
           if (disconnectedPeerId === secondaryHostId) {
-            joinOrder = joinOrder.filter(id => id !== disconnectedPeerId);
-            if (joinOrder.length > 0) {
-              secondaryHostId = joinOrder[0];
+            const guestPlayers = Array.from(connectedPlayers.keys()).filter(id => !connectedPlayers.get(id).isSelf);
+            if (guestPlayers.length > 0) {
+              secondaryHostId = guestPlayers[0];
               secondaryHostBackupId = playerBackupIds.get(secondaryHostId) || null;
               
               sendEvent({
                 a: 'secondaryHostDesignated',
                 secondaryHostId: secondaryHostId,
-                joinOrder: joinOrder
+                joinOrder: guestPlayers
               });
               
               // Enviar información específica al nuevo host secundario
               const newSecondaryConn = connections.find(c => c.peer === secondaryHostId);
               if (newSecondaryConn && newSecondaryConn.open) {
-                newSecondaryConn.send({ a: 'secondaryHostInfo', secondaryHostId, joinOrder });
+                newSecondaryConn.send({ a: 'secondaryHostInfo', secondaryHostId, joinOrder: guestPlayers });
                 if (secondaryHostBackupId) {
                   newSecondaryConn.send({ a: 'secondaryHostIdUpdate', secondaryHostId, secondaryHostBackupId });
                 }
@@ -2291,8 +2324,6 @@
               secondaryHostId = null;
               secondaryHostBackupId = null;
             }
-          } else {
-            joinOrder = joinOrder.filter(id => id !== disconnectedPeerId);
           }
           
           updatePlayersBar();
@@ -2394,7 +2425,6 @@
           } else if (data.a === 'secondaryHostInfo') {
             // Recibir información del host secundario
             secondaryHostId = data.secondaryHostId;
-            joinOrder = data.joinOrder;
             
             // Guardar ID de respaldo del host secundario
             if (secondaryHostId === myPeerId) {
@@ -2405,21 +2435,14 @@
             }
             
             updatePlayersBar(); // Actualizar UI inmediatamente
-          } else if (data.a === 'allBackupIds') {
-            // Recibir todas las IDs de respaldo
-            data.ids.forEach(([playerId, backupId]) => {
-              if (playerId !== myPeerId) {
-                playerBackupIds.set(playerId, backupId);
-                
-                // Si es el host secundario, guardar su ID
-                if (playerId === secondaryHostId) {
-                  secondaryHostBackupId = backupId;
-                }
-              }
-            });
+          } else if (data.a === 'secondaryHostBackupId') {
+            // Solo recibir backup ID del host secundario
+            if (data.from === secondaryHostId) {
+              secondaryHostBackupId = data.id;
+              updatePlayersBar();
+            }
             
-            // Enviar mi ID de respaldo al host
-            myConnection.send({ a: 'backupId', id: myBackupId, from: myPeerId });
+            // El host ya envió mi backup ID
           } else if (data.a === 'peerList') {
             // Crear conexiones P2P con otros jugadores
             data.peers.forEach(peerId => {
@@ -2427,15 +2450,15 @@
                 const peerConn = peer.connect(peerId);
                 peerConn.on('open', () => {
                   peerConnections.set(peerId, peerConn);
-                  peerConn.send({ a: 'peerHello', from: myPeerId, nick: sanitizeNickname(userNickname) });
+                  peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                   
                   // Configurar manejo de datos P2P
                   peerConn.on('data', (peerData) => {
-                    if (peerData.a === 'peerHello') {
-                      connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), lastPong: Date.now() });
+                    if (peerData.a === 'hello') {
+                      connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
                       updatePlayersBar();
                       // Responder con mi información
-                      peerConn.send({ a: 'peerHello', from: myPeerId, nick: sanitizeNickname(userNickname) });
+                      peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                     } else {
                       handleSync(peerData);
                     }
@@ -2466,7 +2489,12 @@
                 setupSyncPanel();
                 initPeer();
               } else {
-                promoteToHost();
+                // Solo intentar reconectar con host secundario, NO ascender
+                if (secondaryHostBackupId) {
+                  connectToSecondaryHost();
+                } else {
+                  tryConnectToBackupHosts();
+                }
               }
             }, 10000);
           } else if (data.a === 'fullState') {
@@ -2483,6 +2511,15 @@
             // Update player info when someone new joins
             connectedPlayers.set(data.playerId, { nick: sanitizeNickname(data.nick), champion: data.champion, color: data.color, lastPong: Date.now() });
             updatePlayersBar();
+            
+            // Propagar información a conexiones P2P
+            peerConnections.forEach(peerConn => {
+              if (peerConn.open && peerConn.peer !== data.playerId) {
+                try {
+                  peerConn.send({ a: 'playerJoined', playerId: data.playerId, nick: sanitizeNickname(data.nick), champion: data.champion, color: data.color });
+                } catch (e) {}
+              }
+            });
           } else if (data.a === 'becomeHost') {
             isHost = true;
             hostNickname = sanitizeNickname(userNickname);
@@ -2499,185 +2536,44 @@
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         if (hostLostTimeout) clearTimeout(hostLostTimeout);
         
+        // Notificar a peers P2P que el host se perdió
+        peerConnections.forEach(peerConn => {
+          if (peerConn.open) {
+            try {
+              peerConn.send({ a: 'hostLost', from: myPeerId });
+            } catch (e) {}
+          }
+        });
+        
         if (secondaryHostId === myPeerId) {
           // Soy el host secundario - convertirme en host principal
           setTimeout(() => {
             isHost = true;
-            shortId = myBackupId;
+            shortId = secondaryHostBackupId; // Usar la ID asignada por el host
             hostNickname = sanitizeNickname(userNickname);
             
-            // Limpiar conexiones duplicadas pero mantener P2P
-            connectedPlayers.clear();
-            connectedPlayers.set(myPeerId, { nick: sanitizeNickname(userNickname), lastPong: Date.now(), isSelf: true });
+            // Limpiar completamente el estado como host original
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            if (hostLostTimeout) clearTimeout(hostLostTimeout);
+            if (pingInterval) clearInterval(pingInterval);
+            if (cleanupInterval) clearInterval(cleanupInterval);
             
-            // Obtener nicks reales de las conexiones P2P antes de limpiar
-            const realNicks = new Map();
-            peerConnections.forEach((conn, peerId) => {
-              const player = connectedPlayers.get(peerId);
-              if (player) {
-                realNicks.set(peerId, player.nick);
-              }
-            });
-            
-            // Mantener conexiones P2P existentes y agregarlas como connections
             connections = [];
-            peerConnections.forEach((conn, peerId) => {
-              if (conn.open) {
-                connections.push(conn);
-                const realNick = realNicks.get(peerId) || 'Player';
-                connectedPlayers.set(peerId, { nick: sanitizeNickname(realNick), lastPong: Date.now() });
-                
-                // Enviar información de nuevo host inmediatamente
-                setTimeout(() => {
-                  conn.send({ a: 'newHostAnnouncement', nick: sanitizeNickname(userNickname), from: myPeerId });
-                  conn.send({ a: 'hostInfo', nick: sanitizeNickname(userNickname), from: myPeerId });
-                }, 100);
-              }
-            });
+            connectedPlayers.clear();
+            peerConnections.clear();
+            pendingPings.clear();
+            myPeerId = null; // Limpiar para que se actualice con la nueva ID de host
             
-            // Regenerar orden y designar nuevo host secundario
-            joinOrder = Array.from(peerConnections.keys());
-            if (joinOrder.length > 0) {
-              secondaryHostId = joinOrder[0];
-              secondaryHostBackupId = playerBackupIds.get(secondaryHostId) || generateShortId();
-              
-              // Notificar nuevo host secundario
-              sendEvent({
-                a: 'secondaryHostDesignated',
-                secondaryHostId: secondaryHostId,
-                joinOrder: joinOrder
-              });
-            } else {
-              secondaryHostId = null;
-              secondaryHostBackupId = null;
-            }
+            // Limpiar información de host secundario al convertirse en host principal
+            secondaryHostId = null;
+            secondaryHostBackupId = null;
             
             setupSyncPanel();
-            
-            // No reinicializar peer completamente, solo cambiar el estado
-            if (peer) {
-              peer.destroy();
-            }
-            
-            const config = {
-              config: {
-                iceServers: [
-                  { urls: 'stun:stun.l.google.com:19302' },
-                  { urls: 'stun:stun1.l.google.com:19302' },
-                  { urls: 'stun:stun2.l.google.com:19302' },
-                  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-                  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
-                ]
-              }
-            };
-            
-            const peerId = `${shortId}_host`;
-            peer = new Peer(peerId, config);
-            
-            peer.on('open', (id) => {
-              myPeerId = id;
-              
-              // Actualizar UI del host con mensaje temporal
-              document.getElementById('myShortId').value = shortId;
-              document.getElementById('hostStatus').innerHTML = `
-                <span class="status success">✅ Reconectado jugadores</span>
-                <span class="user-nick">${sanitizeNickname(userNickname)}</span>
-              `;
-              
-              // Cambiar a mensaje normal después de 10 segundos
-              setTimeout(() => {
-                document.getElementById('hostStatus').innerHTML = `
-                  <span class="status success">✅ ${translations[lang].host}</span>
-                  <span class="user-nick">${sanitizeNickname(userNickname)}</span>
-                `;
-              }, 10000);
-              
-              // Configurar conexiones como host-client normales
-              connections.forEach(conn => {
-                if (conn.open) {
-                  // Reconfigurar para manejo bidireccional
-                  conn.removeAllListeners('data');
-                  conn.on('data', (data) => {
-                    if (!validateEventData(data)) return;
-                    
-                    if (data.a === 'hello') {
-                      // Actualizar nick cuando se recibe hello
-                      if (data.nick && data.from) {
-                        connectedPlayers.set(data.from, { nick: sanitizeNickname(data.nick), lastPong: Date.now() });
-                      }
-                      conn.send({ a: 'hostInfo', nick: sanitizeNickname(userNickname), from: myPeerId });
-                    } else if (data.a === 'heartbeat') {
-                      // Actualizar nick del jugador si viene en el heartbeat
-                      if (data.nick && data.from) {
-                        const player = connectedPlayers.get(data.from);
-                        if (player) {
-                          player.nick = sanitizeNickname(data.nick);
-                        } else {
-                          connectedPlayers.set(data.from, { nick: sanitizeNickname(data.nick), lastPong: Date.now() });
-                        }
-                      }
-                      conn.send({ a: 'heartbeatAck', from: myPeerId });
-                    } else if (data.a === 'ping') {
-                      conn.send({ a: 'pong', from: myPeerId });
-                    } else if (data.a === 'pong') {
-                      const player = connectedPlayers.get(data.from);
-                      if (player) player.lastPong = Date.now();
-                      pendingPings.delete(data.from);
-                    } else {
-                      // Retransmitir eventos a otros clientes
-                      connections.forEach(otherConn => {
-                        if (otherConn !== conn && otherConn.open) {
-                          try {
-                            otherConn.send(data);
-                          } catch (e) {}
-                        }
-                      });
-                    }
-                    handleSync(data);
-                  });
-                  
-                  conn.on('close', () => {
-                    connectedPlayers.delete(conn.peer);
-                    connections = connections.filter(c => c !== conn);
-                    updatePlayersBar();
-                  });
-                }
-              });
-              
-              startHostMonitoring();
-              broadcastPlayerList();
-            });
-            
-            peer.on('connection', (conn) => {
-              if (connections.length >= 7) {
-                conn.close();
-                return;
-              }
-              setupConnection(conn);
-            });
-            
-            setTimeout(() => {
-              // Esperar a que se establezcan las nuevas conexiones
-              updatePlayersBar();
-              
-              // Forzar actualización adicional tras 5 segundos
-              setTimeout(() => {
-                // Asegurar que todos los jugadores conectados estén en la lista
-                connections.forEach(conn => {
-                  if (conn.open && conn.peer) {
-                    const realNick = realNicks.get(conn.peer) || 'Player';
-                    connectedPlayers.set(conn.peer, { nick: sanitizeNickname(realNick), lastPong: Date.now() });
-                    // Solicitar nick actualizado
-                    conn.send({ a: 'requestNick', from: myPeerId });
-                  }
-                });
-                
-                broadcastPlayerList();
-                updatePlayersBar();
-              }, 5000);
-            }, 1500);
+            initPeer();
           }, 1000);
         } else {
+          // Solo intentar reconectar, NO ascender (solo el host secundario designado puede ascender)
+          
           // Mostrar mensaje de reconexión y conectar al host secundario
           const clientStatus = document.getElementById('clientStatus');
           if (clientStatus && secondaryHostBackupId) {
@@ -2700,7 +2596,7 @@
               testConnection.on('open', () => {
                 clearTimeout(timeout);
                 myConnection = testConnection;
-                myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), from: myPeerId });
+                myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
                 
                 heartbeatInterval = setInterval(() => {
                   if (myConnection && myConnection.open) {
@@ -2734,13 +2630,13 @@
                         const peerConn = peer.connect(peerId);
                         peerConn.on('open', () => {
                           peerConnections.set(peerId, peerConn);
-                          peerConn.send({ a: 'peerHello', from: myPeerId, nick: sanitizeNickname(userNickname) });
+                          peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                           
                           peerConn.on('data', (peerData) => {
-                            if (peerData.a === 'peerHello') {
-                              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), lastPong: Date.now() });
+                            if (peerData.a === 'hello') {
+                              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
                               updatePlayersBar();
-                              peerConn.send({ a: 'peerHello', from: myPeerId, nick: sanitizeNickname(userNickname) });
+                              peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                             } else {
                               handleSync(peerData);
                             }
@@ -2757,7 +2653,7 @@
                   } else if (data.a === 'requestNick') {
                     // Responder con mi nick cuando el host lo solicite
                     if (myConnection && myConnection.open) {
-                      myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), from: myPeerId });
+                      myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
                     }
                   } else if (data.a === 'heartbeat') {
                     if (myConnection && myConnection.open) {
@@ -2824,20 +2720,20 @@
             
             // Si el host secundario se desconecta, designar nuevo host secundario
             if (peerId === secondaryHostId) {
-              joinOrder = joinOrder.filter(id => id !== peerId);
-              if (joinOrder.length > 0) {
-                secondaryHostId = joinOrder[0];
+              const guestPlayers = Array.from(connectedPlayers.keys()).filter(id => !connectedPlayers.get(id).isSelf);
+              if (guestPlayers.length > 0) {
+                secondaryHostId = guestPlayers[0];
                 secondaryHostBackupId = playerBackupIds.get(secondaryHostId) || null;
                 sendEvent({
                   a: 'secondaryHostDesignated',
                   secondaryHostId: secondaryHostId,
-                  joinOrder: joinOrder
+                  joinOrder: guestPlayers
                 });
                 
                 // Enviar información específica al nuevo host secundario
                 const newSecondaryConn = connections.find(c => c.peer === secondaryHostId);
                 if (newSecondaryConn && newSecondaryConn.open) {
-                  newSecondaryConn.send({ a: 'secondaryHostInfo', secondaryHostId, joinOrder });
+                  newSecondaryConn.send({ a: 'secondaryHostInfo', secondaryHostId, joinOrder: guestPlayers });
                   if (secondaryHostBackupId) {
                     newSecondaryConn.send({ a: 'secondaryHostIdUpdate', secondaryHostId, secondaryHostBackupId });
                   }
@@ -2851,8 +2747,6 @@
                 secondaryHostId = null;
                 secondaryHostBackupId = null;
               }
-            } else {
-              joinOrder = joinOrder.filter(id => id !== peerId);
             }
             
             changed = true;
@@ -2944,13 +2838,69 @@
             conn.send({ a: 'hostInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
             sendFullState(conn);
           }
+          
+          // Designar host secundario (primer invitado) - REPLICAR setupConnection
+          const guestPlayers = Array.from(connectedPlayers.keys()).filter(id => !connectedPlayers.get(id).isSelf);
+          if (guestPlayers.length === 1) {
+            secondaryHostId = data.from;
+            secondaryHostBackupId = generateShortId();
+            
+            sendEvent({
+              a: 'secondaryHostDesignated',
+              secondaryHostId: data.from,
+              joinOrder: guestPlayers
+            });
+            
+            // Enviar backup ID al host secundario
+            const conn = connections.find(c => c.peer === data.from);
+            if (conn) {
+              conn.send({ a: 'secondaryHostBackupId', id: secondaryHostBackupId, from: myPeerId });
+            }
+            
+            updatePlayersBar();
+          }
+        }
+        return;
+      }
+      
+      if (data.a === 'playerJoined') {
+        connectedPlayers.set(data.playerId, { nick: sanitizeNickname(data.nick), champion: data.champion, color: data.color, lastPong: Date.now() });
+        updatePlayersBar();
+        return;
+      }
+      
+      if (data.a === 'hostLost') {
+        // Otro peer me notifica que perdió conexión con el host
+        if (myConnection && myConnection.open) {
+          // Aún tengo conexión, ignorar
+          return;
+        }
+        
+        // Solo el host secundario designado puede ascender
+        if (secondaryHostId === myPeerId) {
+          // Soy el host secundario, ascender inmediatamente
+          setTimeout(() => {
+            isHost = true;
+            shortId = myBackupId;
+            hostNickname = sanitizeNickname(userNickname);
+            setupSyncPanel();
+            initPeer();
+          }, 1000);
+        } else {
+          // Intentar reconectar con host secundario
+          setTimeout(() => {
+            if (secondaryHostBackupId) {
+              connectToSecondaryHost();
+            } else {
+              tryConnectToBackupHosts();
+            }
+          }, 2000);
         }
         return;
       }
       
       if (data.a === 'secondaryHostDesignated') {
         secondaryHostId = data.secondaryHostId;
-        joinOrder = data.joinOrder;
         
         // Si soy el host secundario, enviar mi ID al host principal
         if (secondaryHostId === myPeerId) {
@@ -2982,18 +2932,30 @@
               });
               
               // Regenerar orden y designar nuevo host secundario
-              joinOrder = Array.from(peerConnections.keys()).filter(id => peerConnections.get(id).open);
-              if (joinOrder.length > 0) {
-                secondaryHostId = joinOrder[0];
-                secondaryHostBackupId = playerBackupIds.get(secondaryHostId) || null;
+              const guestPlayers = Array.from(peerConnections.keys()).filter(id => peerConnections.get(id).open);
+              if (guestPlayers.length > 0) {
+                secondaryHostId = guestPlayers[0];
+                
+                // Generar nueva backup ID si no existe
+                if (!playerBackupIds.has(secondaryHostId)) {
+                  playerBackupIds.set(secondaryHostId, generateShortId());
+                }
+                secondaryHostBackupId = playerBackupIds.get(secondaryHostId);
                 
                 // Notificar nuevo host secundario después de inicializar
                 setTimeout(() => {
                   sendEvent({
                     a: 'secondaryHostDesignated',
                     secondaryHostId: secondaryHostId,
-                    joinOrder: joinOrder
+                    joinOrder: guestPlayers
                   });
+                  
+                  // Enviar backup ID al nuevo host secundario
+                  const newSecondaryConn = connections.find(c => c.peer === secondaryHostId);
+                  if (newSecondaryConn && newSecondaryConn.open) {
+                    newSecondaryConn.send({ a: 'backupId', id: secondaryHostBackupId, from: myPeerId });
+                    newSecondaryConn.send({ a: 'secondaryHostIdUpdate', secondaryHostId, secondaryHostBackupId });
+                  }
                 }, 2000);
               } else {
                 secondaryHostId = null;
@@ -3213,13 +3175,10 @@
       const secondaryHostInfo = document.getElementById('secondary-host-info');
       
       // Mostrar info del host secundario
-      if (secondaryHostId === myPeerId && secondaryHostBackupId) {
-        const secondaryNick = sanitizeNickname(userNickname);
+      if (secondaryHostId && secondaryHostBackupId) {
+        const secondaryPlayer = connectedPlayers.get(secondaryHostId);
+        const secondaryNick = secondaryPlayer ? secondaryPlayer.nick : (secondaryHostId === myPeerId ? sanitizeNickname(userNickname) : 'Player');
         secondaryHostInfo.textContent = `Secondary Host: ${secondaryNick} (ID: ${secondaryHostBackupId})`;
-      } else if (secondaryHostBackupId) {
-        secondaryHostInfo.textContent = `Stored Secondary Host ID: ${secondaryHostBackupId}`;
-      } else if (secondaryHostId && !isHost) {
-        secondaryHostInfo.textContent = `Waiting for Secondary Host ID...`;
       } else {
         secondaryHostInfo.textContent = '';
       }
@@ -3443,38 +3402,12 @@
     }
     
     function connectToSecondaryHost() {
-      const testConnection = peer.connect(`${secondaryHostBackupId}_host`);
-      
-      const timeout = setTimeout(() => {
-        testConnection.close();
-        tryConnectToBackupHosts();
-      }, 5000);
-      
-      testConnection.on('open', () => {
-        clearTimeout(timeout);
-        myConnection = testConnection;
-        myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), from: myPeerId });
-        
-        myConnection.on('data', (data) => {
-          if (!validateEventData(data)) return;
-          
-          if (data.a === 'hostInfo') {
-            hostNickname = sanitizeNickname(data.nick);
-            document.getElementById('clientStatus').innerHTML = `
-              <span>✅ Conectado con <strong>${escapeHtml(hostNickname)}</strong></span>
-              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
-            `;
-            updatePlayersBar();
-          }
-          
-          handleSync(data);
-        });
-      });
-      
-      testConnection.on('error', () => {
-        clearTimeout(timeout);
-        tryConnectToBackupHosts();
-      });
+      // Conectar igual que al host original
+      const hostIdInput = document.getElementById('hostIdInput');
+      if (hostIdInput) {
+        hostIdInput.value = secondaryHostBackupId;
+      }
+      connectToHost(); // Usar la función original de conexión
     }
     
     function tryConnectToBackupHosts() {
@@ -3483,16 +3416,32 @@
       
       const tryNext = () => {
         if (attemptIndex >= backupIds.length) {
+          // Si no se puede conectar a ningún backup, convertirse en host
+          isHost = true;
+          shortId = myBackupId;
+          hostNickname = sanitizeNickname(userNickname);
+          
+          // Mantener conexiones P2P existentes
+          connections = Array.from(peerConnections.values()).filter(conn => conn.open);
+          
           connectedPlayers.clear();
           connectedPlayers.set(myPeerId, { nick: sanitizeNickname(userNickname), lastPong: Date.now(), isSelf: true });
           
-          const clientStatus = document.getElementById('clientStatus');
-          if (clientStatus) {
-            clientStatus.innerHTML = `
-              <span class="error">❌ Connection Lost. Playing solo.</span>
-              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
-            `;
+          // Designar host secundario si hay otros jugadores
+          const remainingGuests = Array.from(peerConnections.keys()).filter(id => peerConnections.get(id).open);
+          if (remainingGuests.length > 0) {
+            secondaryHostId = remainingGuests[0];
+            secondaryHostBackupId = playerBackupIds.get(secondaryHostId) || generateShortId();
+            
+            sendEvent({
+              a: 'secondaryHostDesignated',
+              secondaryHostId: secondaryHostId,
+              joinOrder: remainingGuests
+            });
           }
+          
+          setupSyncPanel();
+          initPeer();
           updatePlayersBar();
           return;
         }
@@ -3509,7 +3458,7 @@
         testConnection.on('open', () => {
           clearTimeout(timeout);
           myConnection = testConnection;
-          myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), from: myPeerId });
+          myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
           
           heartbeatInterval = setInterval(() => {
             if (myConnection && myConnection.open) {
@@ -3544,13 +3493,13 @@
                   const peerConn = peer.connect(peerId);
                   peerConn.on('open', () => {
                     peerConnections.set(peerId, peerConn);
-                    peerConn.send({ a: 'peerHello', from: myPeerId, nick: sanitizeNickname(userNickname) });
+                    peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                     
                     peerConn.on('data', (peerData) => {
-                      if (peerData.a === 'peerHello') {
-                        connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), lastPong: Date.now() });
+                      if (peerData.a === 'hello') {
+                        connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
                         updatePlayersBar();
-                        peerConn.send({ a: 'peerHello', from: myPeerId, nick: sanitizeNickname(userNickname) });
+                        peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                       } else {
                         handleSync(peerData);
                       }
