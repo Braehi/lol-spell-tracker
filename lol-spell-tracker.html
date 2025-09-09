@@ -2117,11 +2117,18 @@
         } else {
           // Invitados aceptan conexiones P2P
           peerConnections.set(conn.peer, conn);
-          // No enviar playerInfo a otros invitados - solo al host
+          conn.on('open', () => {
+            conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+          });
           
           conn.on('data', (peerData) => {
-            // Solo manejar eventos de juego, no info de jugador
-            handleSync(peerData);
+            if (peerData.a === 'hello') {
+              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+              updatePlayersBar();
+              conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+            } else {
+              handleSync(peerData);
+            }
           });
           
           conn.on('close', () => {
@@ -2146,41 +2153,12 @@
         conn.on('data', (data) => {
           if (!validateEventData(data)) return;
           
-          if (data.a === 'playerInfo') {
+          if (data.a === 'hello') {
             const sanitizedNick = sanitizeNickname(data.nick);
-            const existingPlayer = connectedPlayers.get(data.from);
-            let hasChanged = false;
+            connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
             
-            if (!existingPlayer) {
-              connectedPlayers.set(data.from, { nick: sanitizedNick, lastPong: Date.now(), champion: data.champion, color: data.color });
-              hasChanged = true;
-            } else {
-              if (existingPlayer.nick !== sanitizedNick) {
-                existingPlayer.nick = sanitizedNick;
-                hasChanged = true;
-              }
-              if (existingPlayer.champion !== data.champion) {
-                existingPlayer.champion = data.champion;
-                hasChanged = true;
-              }
-              if (existingPlayer.color !== data.color) {
-                existingPlayer.color = data.color;
-                hasChanged = true;
-              }
-              existingPlayer.lastPong = Date.now();
-            }
-            
-            if (hasChanged) {
-              updatePlayersBar();
-              // Retransmitir a todos los otros invitados
-              connections.forEach(otherConn => {
-                if (otherConn !== conn && otherConn.open) {
-                  try {
-                    otherConn.send({ a: 'playerUpdate', playerId: data.from, nick: sanitizedNick, champion: data.champion, color: data.color });
-                  } catch (e) {}
-                }
-              });
-            }
+            // Immediately update players bar to show new player with champion
+            updatePlayersBar();
             
             setTimeout(() => {
               conn.send({ a: 'hostInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
@@ -2392,7 +2370,7 @@
       myConnection.on('open', () => {
         clearTimeout(connectionTimeout);
         setTimeout(() => {
-          myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+          myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
         
         // Iniciar heartbeat
         heartbeatInterval = setInterval(() => {
@@ -2470,11 +2448,17 @@
                 const peerConn = peer.connect(peerId);
                 peerConn.on('open', () => {
                   peerConnections.set(peerId, peerConn);
+                  peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                   
                   // Configurar manejo de datos P2P
                   peerConn.on('data', (peerData) => {
-                    // Solo manejar eventos de juego, no info de jugador
-                    handleSync(peerData);
+                    if (peerData.a === 'hello') {
+                      connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+                      updatePlayersBar();
+                      peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                    } else {
+                      handleSync(peerData);
+                    }
                   });
                   
                   peerConn.on('close', () => {
@@ -2609,7 +2593,7 @@
               testConnection.on('open', () => {
                 clearTimeout(timeout);
                 myConnection = testConnection;
-                myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+                myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
                 
                 heartbeatInterval = setInterval(() => {
                   if (myConnection && myConnection.open) {
@@ -2643,10 +2627,16 @@
                         const peerConn = peer.connect(peerId);
                         peerConn.on('open', () => {
                           peerConnections.set(peerId, peerConn);
+                          peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                           
                           peerConn.on('data', (peerData) => {
-                            // Solo manejar eventos de juego, no info de jugador
-                            handleSync(peerData);
+                            if (peerData.a === 'hello') {
+                              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+                              updatePlayersBar();
+                              peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                            } else {
+                              handleSync(peerData);
+                            }
                           });
                           
                           peerConn.on('close', () => {
@@ -2660,7 +2650,7 @@
                   } else if (data.a === 'requestNick') {
                     // Responder con mi nick cuando el host lo solicite
                     if (myConnection && myConnection.open) {
-                      myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+                      myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
                     }
                   } else if (data.a === 'heartbeat') {
                     if (myConnection && myConnection.open) {
@@ -2825,33 +2815,10 @@
       if (data.from === myPeerId) return;
       if (!validateEventData(data)) return;
 
-      if (data.a === 'playerUpdate') {
+      if (data.a === 'hello') {
         const sanitizedNick = sanitizeNickname(data.nick);
-        const existingPlayer = connectedPlayers.get(data.playerId);
-        let hasChanged = false;
-        
-        if (!existingPlayer) {
-          connectedPlayers.set(data.playerId, { nick: sanitizedNick, champion: data.champion, color: data.color, lastPong: Date.now() });
-          hasChanged = true;
-        } else {
-          if (existingPlayer.nick !== sanitizedNick) {
-            existingPlayer.nick = sanitizedNick;
-            hasChanged = true;
-          }
-          if (existingPlayer.champion !== data.champion) {
-            existingPlayer.champion = data.champion;
-            hasChanged = true;
-          }
-          if (existingPlayer.color !== data.color) {
-            existingPlayer.color = data.color;
-            hasChanged = true;
-          }
-          existingPlayer.lastPong = Date.now();
-        }
-        
-        if (hasChanged) {
-          updatePlayersBar();
-        }
+        connectedPlayers.set(data.from, { nick: sanitizedNick, champion: data.champion, color: data.color, lastPong: Date.now() });
+        updatePlayersBar();
         if (isHost) {
           broadcastPlayerList();
           const conn = connections.find(c => c.peer === data.from);
@@ -2889,11 +2856,7 @@
         updatePlayersBar();
         return;
       }
-      
-      if (data.a === 'playerInfo') {
-        // Los invitados no procesan playerInfo directamente - solo el host
-        return;
-      }
+
       
       if (data.a === 'hostLost') {
         // Otro peer me notifica que perdió conexión con el host
@@ -3604,7 +3567,7 @@
         testConnection.on('open', () => {
           clearTimeout(timeout);
           myConnection = testConnection;
-          myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+          myConnection.send({ a: 'hello', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
           
           heartbeatInterval = setInterval(() => {
             if (myConnection && myConnection.open) {
@@ -3639,10 +3602,16 @@
                   const peerConn = peer.connect(peerId);
                   peerConn.on('open', () => {
                     peerConnections.set(peerId, peerConn);
+                    peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
                     
                     peerConn.on('data', (peerData) => {
-                      // Solo manejar eventos de juego, no info de jugador
-                      handleSync(peerData);
+                      if (peerData.a === 'hello') {
+                        connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+                        updatePlayersBar();
+                        peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                      } else {
+                        handleSync(peerData);
+                      }
                     });
                     
                     peerConn.on('close', () => {
@@ -3711,7 +3680,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.14 - 9/9/25 - fix no-save options data transfer
+    Lol Spell Tracker v0.2.15 - 9/9/25 - revert to v0.2.2 P2P system
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
