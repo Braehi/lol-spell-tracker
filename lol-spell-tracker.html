@@ -2123,9 +2123,15 @@
           
           conn.on('data', (peerData) => {
             if (peerData.a === 'hello') {
-              connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-              updatePlayersBar();
-              conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+              const existingPlayer = connectedPlayers.get(peerData.from);
+              if (!existingPlayer) {
+                connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+                updatePlayersBar();
+                conn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+              } else {
+                // Solo actualizar timestamp si ya existe
+                existingPlayer.lastPong = Date.now();
+              }
             } else {
               handleSync(peerData);
             }
@@ -2453,10 +2459,16 @@
                   // Configurar manejo de datos P2P
                   peerConn.on('data', (peerData) => {
                     if (peerData.a === 'hello') {
-                      connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
-                      updatePlayersBar();
-                      // Responder con mi información
-                      peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                      const existingPlayer = connectedPlayers.get(peerData.from);
+                      if (!existingPlayer) {
+                        connectedPlayers.set(peerData.from, { nick: sanitizeNickname(peerData.nick), champion: peerData.champion, color: peerData.color, lastPong: Date.now() });
+                        updatePlayersBar();
+                        // Responder con mi información
+                        peerConn.send({ a: 'hello', from: myPeerId, nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor });
+                      } else {
+                        // Solo actualizar timestamp si ya existe
+                        existingPlayer.lastPong = Date.now();
+                      }
                     } else {
                       handleSync(peerData);
                     }
@@ -3569,7 +3581,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.2 - 9/9/25 - Backup system 90%, random custom options
+    Lol Spell Tracker v0.2.3 - 9/9/25 - p2p connection flickering fix?
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
