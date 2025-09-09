@@ -1100,26 +1100,7 @@
       document.body.classList.add('light-theme');
     }
 
-    // Sincronizar switches
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('langSwitch').checked = lang === 'es';
-      document.getElementById('themeSwitch').checked = themeToUse === 'light';
-      
-      // Activar modo Diana si viene en la URL
-      if (dianaMode) {
-        document.body.classList.add('diana-mode');
-        const title = document.getElementById('appTitle');
-        if (lang === 'es') {
-          title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> Una nueva luna se alza <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
-        } else {
-          title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> A new moon is rising <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
-        }
-        
-        // Cambiar favicon
-        const favicon = document.querySelector('link[rel="icon"]');
-        favicon.href = './images/Diana.png';
-      }
-    });
+    // Configuración inicial (se ejecutará en DOMContentLoaded)
 
     // ====================== VARIABLES GLOBALES ======================
     let shortId = generateShortId();
@@ -3328,7 +3309,26 @@
 
     // ====================== INICIO ======================
     document.addEventListener('DOMContentLoaded', () => {
-      // Crear temporizadores primero
+      // Configuración inicial
+      document.getElementById('langSwitch').checked = lang === 'es';
+      document.getElementById('themeSwitch').checked = themeToUse === 'light';
+      
+      // Activar modo Diana si viene en la URL
+      if (dianaMode) {
+        document.body.classList.add('diana-mode');
+        const title = document.getElementById('appTitle');
+        if (lang === 'es') {
+          title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> Una nueva luna se alza <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
+        } else {
+          title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> A new moon is rising <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
+        }
+        
+        // Cambiar favicon
+        const favicon = document.querySelector('link[rel="icon"]');
+        favicon.href = './images/Diana.png';
+      }
+      
+      // Crear temporizadores
       console.log('DOM loaded, creating timers...');
       
       // ====================== CREACIÓN DE TEMPORIZADORES ======================
@@ -3862,7 +3862,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.6.2 - 9/9/25 - fix missing showToast function
+    Lol Spell Tracker v0.6.3 - 9/9/25 - fix duplicate DOMContentLoaded
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
