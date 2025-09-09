@@ -1273,202 +1273,7 @@
       const secs = seconds % 60;
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
-    // ====================== CREACIÓN DE TEMPORIZADORES ======================
-    roles.forEach((role, i) => {
-      const row = document.createElement('div');
-      row.className = 'timer-row';
 
-      const resetBtn = document.createElement('button');
-      resetBtn.className = 'reset-btn';
-      resetBtn.innerHTML = '×';
-      resetBtn.title = translations[lang].reset;
-      resetBtn.onclick = (e) => {
-        e.stopPropagation();
-        resetTimer(timerBoxes[i], true);
-      };
-
-      const roleIcon = document.createElement('div');
-      roleIcon.className = 'role-icon';
-      const img = document.createElement('img');
-      img.src = icons[i];
-      img.alt = role;
-      img.title = role;
-      img.onerror = function() { this.src = './images/Flash.png'; };
-      roleIcon.appendChild(img);
-
-      const box = document.createElement('div');
-      box.className = 'timer-box';
-      box.dataset.role = role;
-      box.dataset.index = i;
-
-      const message = document.createElement('div');
-      message.className = 'reset-message';
-      message.textContent = translations[lang].reset;
-      box.appendChild(message);
-
-      const notification = document.createElement('div');
-      notification.className = 'time-notification';
-      notification.textContent = '-10s';
-      box.appendChild(notification);
-
-      const feedback = document.createElement('div');
-      feedback.className = 'feedback';
-      feedback.textContent = '-10';
-      box.appendChild(feedback);
-
-      const roleName = document.createElement('span');
-      roleName.className = 'role-name';
-      roleName.textContent = lang === 'es' ? {
-        'Top': 'Superior',
-        'Jungle': 'Jungla',
-        'Middle': 'Medio',
-        'Bottom': 'Inferior',
-        'Support': 'Soporte'
-      }[role] : role;
-
-      const controls = document.createElement('div');
-      controls.style.display = 'flex';
-      controls.style.alignItems = 'center';
-      controls.style.gap = '6px';
-      controls.innerHTML = `
-        <button class="time-shortcut" data-sec="-10">-10</button>
-        <button class="time-shortcut" data-sec="-30">-30</button>
-        <span class="time">05:00</span>
-      `;
-
-      box.appendChild(roleName);
-      box.appendChild(controls);
-
-      // TEMPORIZADOR SECUNDARIO
-      const staticTimer = document.createElement('div');
-      staticTimer.className = 'static-timer';
-      staticTimer.innerHTML = `<span>05:00</span>`;
-      staticTimer.dataset.role = role;
-      staticTimer.dataset.index = i;
-
-      // Desplegable
-      const select = document.createElement('select');
-      select.className = 'spell-select';
-
-      Object.keys(spellData).forEach(spell => {
-        const option = document.createElement('option');
-        option.value = spell;
-        option.textContent = spell.charAt(0).toUpperCase() + spell.slice(1);
-        select.appendChild(option);
-      });
-
-      const defaultSpell = defaultSpells[i];
-      select.value = defaultSpell;
-      const data = spellData[defaultSpell];
-      staticTimer.dataset.seconds = data.duration;
-      staticTimer.dataset.initialDuration = data.duration;
-      staticTimer.querySelector('span').textContent = formatTime(data.duration);
-      staticTimer.style.backgroundImage = `url(${data.icon})`;
-
-      select.addEventListener('change', () => {
-        const spell = select.value;
-        const d = spellData[spell];
-        staticTimer.dataset.seconds = d.duration;
-        staticTimer.dataset.initialDuration = d.duration;
-        staticTimer.querySelector('span').textContent = formatTime(d.duration);
-        staticTimer.style.backgroundImage = `url(${d.icon})`;
-        updateStaticTimerStyle(staticTimer);
-        
-        // Actualizar icono de rol si los desplegables están visibles
-        const arrow = document.getElementById('toggleArrow');
-        if (arrow.textContent.trim() === '⬅️') {
-          const roleIcon = document.querySelectorAll('.role-icon')[i];
-          const img = roleIcon.querySelector('img');
-          img.src = d.icon;
-        }
-        
-        sendEvent({
-          a: 'changeSpell',
-          i: i,
-          spell: spell
-        });
-      });
-
-      // Botón de reinicio secundario
-      const resetBtnSecondary = document.createElement('button');
-      resetBtnSecondary.className = 'reset-btn-secondary';
-      resetBtnSecondary.innerHTML = '×';
-      resetBtnSecondary.title = 'Reset Spell';
-      resetBtnSecondary.onclick = (e) => {
-        e.stopPropagation();
-        resetStaticTimer(staticTimer, select);
-        sendEvent({
-          a: 'resetSecondary',
-          i: i
-        });
-      };
-
-      row.appendChild(resetBtn);
-      row.appendChild(roleIcon);
-      row.appendChild(box);
-      row.appendChild(staticTimer);
-      row.appendChild(resetBtnSecondary);
-      row.appendChild(select);
-
-      select.style.display = 'none';
-
-      staticTimer.addEventListener('click', (e) => {
-        if (staticTimer.classList.contains('active')) return;
-        startStaticTimer(staticTimer);
-        row.classList.add('secondary-active');
-        sendEvent({
-          a: 'startSecondary',
-          i: i,
-          s: parseInt(staticTimer.dataset.seconds),
-          startTime: staticTimer.startTime
-        });
-      });
-
-      timerBoxes[i] = box;
-      staticTimers[i] = staticTimer;
-      spellSelects[i] = select;
-
-      box.onclick = (e) => {
-        if (e.target === message || e.target.closest('.time-shortcut')) return;
-        
-        if (box.classList.contains('active')) {
-          // Efecto de pulsación en la caja del temporizador
-          box.style.transform = 'scale(1.02)';
-          setTimeout(() => {
-            box.style.transform = '';
-          }, 150);
-          
-          // Mostrar botones y reiniciar timeout
-          showButtonsWithTimeout(box);
-          return;
-        }
-        
-        startTimer(box, true);
-        // Mostrar botones al iniciar temporizador
-        showButtonsWithTimeout(box);
-      };
-      
-      // Mostrar botones al hacer hover solo si está activo
-      box.addEventListener('mouseenter', () => {
-        if (box.classList.contains('active')) {
-          showButtonsWithTimeout(box);
-        }
-      });
-      
-      box.addEventListener('mouseleave', () => {
-        // No hacer nada al salir del hover, el timeout se encarga
-      });
-
-      box.querySelectorAll('.time-shortcut').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const seconds = parseInt(e.target.dataset.sec);
-          adjustTime(box, seconds, true);
-        });
-      });
-
-      document.getElementById('timers').appendChild(row);
-    });
 
     // ====================== FUNCIÓN PARA MOSTRAR BOTONES ======================
     function showButtonsWithTimeout(box) {
@@ -3523,6 +3328,208 @@
 
     // ====================== INICIO ======================
     document.addEventListener('DOMContentLoaded', () => {
+      // Crear temporizadores primero
+      console.log('DOM loaded, creating timers...');
+      
+      // ====================== CREACIÓN DE TEMPORIZADORES ======================
+      roles.forEach((role, i) => {
+        const row = document.createElement('div');
+        row.className = 'timer-row';
+
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'reset-btn';
+        resetBtn.innerHTML = '×';
+        resetBtn.title = translations[lang].reset;
+        resetBtn.onclick = (e) => {
+          e.stopPropagation();
+          resetTimer(timerBoxes[i], true);
+        };
+
+        const roleIcon = document.createElement('div');
+        roleIcon.className = 'role-icon';
+        const img = document.createElement('img');
+        img.src = icons[i];
+        img.alt = role;
+        img.title = role;
+        img.onerror = function() { this.src = './images/Flash.png'; };
+        roleIcon.appendChild(img);
+
+        const box = document.createElement('div');
+        box.className = 'timer-box';
+        box.dataset.role = role;
+        box.dataset.index = i;
+
+        const message = document.createElement('div');
+        message.className = 'reset-message';
+        message.textContent = translations[lang].reset;
+        box.appendChild(message);
+
+        const notification = document.createElement('div');
+        notification.className = 'time-notification';
+        notification.textContent = '-10s';
+        box.appendChild(notification);
+
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+        feedback.textContent = '-10';
+        box.appendChild(feedback);
+
+        const roleName = document.createElement('span');
+        roleName.className = 'role-name';
+        roleName.textContent = lang === 'es' ? {
+          'Top': 'Superior',
+          'Jungle': 'Jungla',
+          'Middle': 'Medio',
+          'Bottom': 'Inferior',
+          'Support': 'Soporte'
+        }[role] : role;
+
+        const controls = document.createElement('div');
+        controls.style.display = 'flex';
+        controls.style.alignItems = 'center';
+        controls.style.gap = '6px';
+        controls.innerHTML = `
+          <button class="time-shortcut" data-sec="-10">-10</button>
+          <button class="time-shortcut" data-sec="-30">-30</button>
+          <span class="time">05:00</span>
+        `;
+
+        box.appendChild(roleName);
+        box.appendChild(controls);
+
+        // TEMPORIZADOR SECUNDARIO
+        const staticTimer = document.createElement('div');
+        staticTimer.className = 'static-timer';
+        staticTimer.innerHTML = `<span>05:00</span>`;
+        staticTimer.dataset.role = role;
+        staticTimer.dataset.index = i;
+
+        // Desplegable
+        const select = document.createElement('select');
+        select.className = 'spell-select';
+
+        Object.keys(spellData).forEach(spell => {
+          const option = document.createElement('option');
+          option.value = spell;
+          option.textContent = spell.charAt(0).toUpperCase() + spell.slice(1);
+          select.appendChild(option);
+        });
+
+        const defaultSpell = defaultSpells[i];
+        select.value = defaultSpell;
+        const data = spellData[defaultSpell];
+        staticTimer.dataset.seconds = data.duration;
+        staticTimer.dataset.initialDuration = data.duration;
+        staticTimer.querySelector('span').textContent = formatTime(data.duration);
+        staticTimer.style.backgroundImage = `url(${data.icon})`;
+
+        select.addEventListener('change', () => {
+          const spell = select.value;
+          const d = spellData[spell];
+          staticTimer.dataset.seconds = d.duration;
+          staticTimer.dataset.initialDuration = d.duration;
+          staticTimer.querySelector('span').textContent = formatTime(d.duration);
+          staticTimer.style.backgroundImage = `url(${d.icon})`;
+          updateStaticTimerStyle(staticTimer);
+          
+          // Actualizar icono de rol si los desplegables están visibles
+          const arrow = document.getElementById('toggleArrow');
+          if (arrow.textContent.trim() === '⬅️') {
+            const roleIcon = document.querySelectorAll('.role-icon')[i];
+            const img = roleIcon.querySelector('img');
+            img.src = d.icon;
+          }
+          
+          sendEvent({
+            a: 'changeSpell',
+            i: i,
+            spell: spell
+          });
+        });
+
+        // Botón de reinicio secundario
+        const resetBtnSecondary = document.createElement('button');
+        resetBtnSecondary.className = 'reset-btn-secondary';
+        resetBtnSecondary.innerHTML = '×';
+        resetBtnSecondary.title = 'Reset Spell';
+        resetBtnSecondary.onclick = (e) => {
+          e.stopPropagation();
+          resetStaticTimer(staticTimer, select);
+          sendEvent({
+            a: 'resetSecondary',
+            i: i
+          });
+        };
+
+        row.appendChild(resetBtn);
+        row.appendChild(roleIcon);
+        row.appendChild(box);
+        row.appendChild(staticTimer);
+        row.appendChild(resetBtnSecondary);
+        row.appendChild(select);
+
+        select.style.display = 'none';
+
+        staticTimer.addEventListener('click', (e) => {
+          if (staticTimer.classList.contains('active')) return;
+          startStaticTimer(staticTimer);
+          row.classList.add('secondary-active');
+          sendEvent({
+            a: 'startSecondary',
+            i: i,
+            s: parseInt(staticTimer.dataset.seconds),
+            startTime: staticTimer.startTime
+          });
+        });
+
+        timerBoxes[i] = box;
+        staticTimers[i] = staticTimer;
+        spellSelects[i] = select;
+
+        box.onclick = (e) => {
+          if (e.target === message || e.target.closest('.time-shortcut')) return;
+          
+          if (box.classList.contains('active')) {
+            // Efecto de pulsación en la caja del temporizador
+            box.style.transform = 'scale(1.02)';
+            setTimeout(() => {
+              box.style.transform = '';
+            }, 150);
+            
+            // Mostrar botones y reiniciar timeout
+            showButtonsWithTimeout(box);
+            return;
+          }
+          
+          startTimer(box, true);
+          // Mostrar botones al iniciar temporizador
+          showButtonsWithTimeout(box);
+        };
+        
+        // Mostrar botones al hacer hover solo si está activo
+        box.addEventListener('mouseenter', () => {
+          if (box.classList.contains('active')) {
+            showButtonsWithTimeout(box);
+          }
+        });
+        
+        box.addEventListener('mouseleave', () => {
+          // No hacer nada al salir del hover, el timeout se encarga
+        });
+
+        box.querySelectorAll('.time-shortcut').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const seconds = parseInt(e.target.dataset.sec);
+            adjustTime(box, seconds, true);
+          });
+        });
+
+        document.getElementById('timers').appendChild(row);
+        console.log(`Timer ${i} (${role}) created and appended`);
+      });
+      console.log('All timers created successfully');
+      
       gameTimerEl = document.getElementById('gameTimer');
       mainActionBtn = document.getElementById('mainActionBtn');
 
@@ -3534,8 +3541,6 @@
           mainActionBtn.textContent = 'Reset All';
         }
       });
-
-
 
       document.getElementById('toggleSpellsBtn').addEventListener('click', toggleSpells);
       document.getElementById('tutorialToggle').addEventListener('click', toggleTutorial);
@@ -3804,7 +3809,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.6.0 - 9/9/25 - new connection system
+    Lol Spell Tracker v0.6.1 - 9/9/25 - fix broken timers
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
