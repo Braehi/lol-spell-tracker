@@ -140,14 +140,14 @@
       padding: 16px;
       border-top: 1px solid var(--border);
       background: var(--bg-secondary);
-      overflow: visible;
+      overflow: hidden;
       max-height: 0;
       opacity: 0;
       transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.4s ease;
     }
 
     .advanced-settings[open] .settings-panel {
-      max-height: 900px;
+      max-height: 1200px;
       opacity: 1;
     }
 
@@ -580,8 +580,6 @@
           🎲
         </div>
       </div>
-      
-      <button id="randomizeAll" style="width: 100%; padding: 6px 12px; background: #f39c12; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 12px; font-size: 0.8rem;">🎲 Random Champion + Color</button>
 
       <!-- Tarjeta: Unirse a sala -->
       <div class="role-card" 
@@ -666,12 +664,20 @@
       <summary data-translate="advancedSettings">Advanced settings</summary>
       <button id="helpBtn" style="position: absolute; right: 16px; top: 12px; width: 22px; height: 22px; background: var(--bg-card); border: 2px solid var(--border); color: var(--text-muted); border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center; transition: all 0.3s ease; opacity: 0.7; z-index: 10;">i</button>
       <div class="settings-panel">
-        <label>
+        <label id="rememberChoiceLabel">
           <input type="checkbox" id="rememberChoice" checked> 
           <span data-translate="rememberChoice">Remember my role choice</span>
         </label>
         <div style="position: relative; margin-bottom: 12px;">
           <div class="help-text" id="helpRemember" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpRemember">Automatically selects your last used role (host/guest) when opening the app.</div>
+        </div>
+        
+        <label>
+          <input type="checkbox" id="noSaveOptions"> 
+          <span data-translate="noSaveOptions">Don't save my options</span>
+        </label>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpNoSave" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpNoSave">Prevents saving any preferences locally. Everything resets when you close the app.</div>
         </div>
         
         <label>
@@ -705,10 +711,10 @@
           <span>✏️ <span data-translate="championIcon">Champion Icon:</span></span>
         </label>
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <input type="text" id="championInput" placeholder="Type champion name..." style="flex: 1; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;" list="championList" autocomplete="off">
+          <input type="text" id="championInput" placeholder="Type champion name..." data-translate-placeholder="championPlaceholder" style="flex: 1; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;" list="championList" autocomplete="off">
           <datalist id="championList"></datalist>
           <img id="championPreview" style="width: 32px; height: 32px; border-radius: 4px; border: 1px solid var(--border); display: none; object-fit: cover; flex-shrink: 0;" />
-          <button id="clearChampion" style="padding: 6px 10px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; transition: transform 0.1s ease;">None</button>
+          <button id="clearChampion" style="padding: 6px 10px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; transition: transform 0.1s ease;" data-translate="none">None</button>
         </div>
         <div style="position: relative; margin-bottom: 12px;">
           <div class="help-text" id="helpChampionIcon" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpChampionIcon">Set a champion icon for others to see.</div>
@@ -720,24 +726,37 @@
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
           <select id="userColor" style="flex: 0 0 140px; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;">
             <option value="" data-translate="defaultColor">Default</option>
-            <option value="#ff6b6b" style="color: #ff6b6b;">🔴 Red</option>
-            <option value="#4ecdc4" style="color: #4ecdc4;">🟢 Green</option>
-            <option value="#45b7d1" style="color: #45b7d1;">🔵 Blue</option>
-            <option value="#f9ca24" style="color: #f9ca24;">🟡 Yellow</option>
-            <option value="#f0932b" style="color: #f0932b;">🟠 Orange</option>
-            <option value="#eb4d4b" style="color: #eb4d4b;">🔴 Crimson</option>
-            <option value="#6c5ce7" style="color: #6c5ce7;">🟣 Purple</option>
-            <option value="#a29bfe" style="color: #a29bfe;">🟣 Lavender</option>
-            <option value="#fd79a8" style="color: #fd79a8;">🩷 Pink</option>
-            <option value="#00b894" style="color: #00b894;">🟢 Teal</option>
+            <option value="custom" data-translate="customColor">Custom</option>
+            <option value="#ff6b6b">🔴 Red</option>
+            <option value="#4ecdc4">🟢 Green</option>
+            <option value="#45b7d1">🔵 Blue</option>
+            <option value="#f9ca24">🟡 Yellow</option>
+            <option value="#f0932b">🟠 Orange</option>
+            <option value="#eb4d4b">🔴 Crimson</option>
+            <option value="#6c5ce7">🟣 Purple</option>
+            <option value="#a29bfe">🟣 Lavender</option>
+            <option value="#fd79a8">🩷 Pink</option>
+            <option value="#00b894">🟢 Teal</option>
           </select>
           <input type="color" id="colorPicker" value="#bb86fc" style="width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: none;">
           <div id="colorPreview" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); background: var(--text-primary);"></div>
-          <button id="clearColor" style="padding: 4px 8px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.75rem; transition: transform 0.1s ease;">None</button>
+          <button id="clearColor" style="padding: 4px 8px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.75rem; transition: transform 0.1s ease;" data-translate="none">None</button>
         </div>
         <div style="position: relative; margin-bottom: 12px;">
           <div class="help-text" id="helpUserColor" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpUserColor">Choose a color for your name that others will see.</div>
         </div>
+        
+        <button id="randomizeAll" style="width: 100%; padding: 6px 12px; background: #f39c12; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 8px; font-size: 0.8rem;" data-translate="randomAll">🎲 Random Champion + Color</button>
+        <div style="position: relative; margin-bottom: 8px;">
+          <div class="help-text" id="helpRandomAll" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpRandomAll">Randomly selects a champion name, sets it as your nickname, and picks a random color.</div>
+        </div>
+        
+        <button id="clearAll" style="width: 100%; padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 12px; font-size: 0.8rem;" data-translate="clearAll">🧹 Clear All</button>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpClearAll" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpClearAll">Clears your nickname, champion icon, and color selection. Resets everything to default.</div>
+        </div>
+        
+        <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 20px 0;"></div>
         
         <button id="testDiana" style="width: 100%; padding: 8px 12px; background: #6c5ce7; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-top: 12px; font-size: 0.85rem;">🌙 Test Diana Easter Egg</button>
         
@@ -750,7 +769,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.2.1 - 8/9/25 - modularización, optimizacion css, fixes visuales, fixes easter-egg
+      Lol Spell Tracker v0.2.2 - 9/9/25 - Backup system 90%, random custom options
     </div>
   </div>
 
@@ -801,7 +820,16 @@
         userColor: "User Color",
         helpUserColor: "Choose a color for your name that others will see.",
 
-        defaultColor: "Default"
+        defaultColor: "Default",
+        customColor: "Custom",
+        championPlaceholder: "Type champion name...",
+        none: "None",
+        randomAll: "🎲 Random Champion + Color",
+        clearAll: "🧹 Clear All",
+        helpRandomAll: "Randomly selects a champion name, sets it as your nickname, and picks a random color.",
+        helpClearAll: "Clears your nickname, champion icon, and color selection. Resets everything to default.",
+        noSaveOptions: "Don't save my options",
+        helpNoSave: "Prevents saving any preferences locally. Everything resets when you close the app."
       },
       es: {
         ready: "Listo",
@@ -847,7 +875,16 @@
         userColor: "Color de Usuario",
         helpUserColor: "Elige un color para tu nombre que verán los demás.",
 
-        defaultColor: "Por defecto"
+        defaultColor: "Por defecto",
+        customColor: "Personalizado",
+        championPlaceholder: "Escribe nombre del campeón...",
+        none: "Ninguno",
+        randomAll: "🎲 Campeón + Color Aleatorio",
+        clearAll: "🧹 Limpiar Todo",
+        helpRandomAll: "Selecciona aleatoriamente un nombre de campeón, lo establece como tu apodo y elige un color aleatorio.",
+        helpClearAll: "Limpia tu apodo, icono de campeón y selección de color. Resetea todo a los valores por defecto.",
+        noSaveOptions: "No guardar mis opciones",
+        helpNoSave: "Evita guardar cualquier preferencia localmente. Todo se resetea al cerrar la aplicación."
       }
     };
 
@@ -1199,7 +1236,7 @@
         return false;
       }
       
-      if (!/^[a-zA-Z0-9\sáéíóúñüÁÉÍÓÚÑÜ.']+$/.test(nickname.trim())) {
+      if (!/^[a-zA-Z0-9\sáéíóúñüÁÉÍÓÚÑÜ.'&]+$/.test(nickname.trim())) {
         showError(t("invalidChars"));
         return false;
       }
@@ -1492,6 +1529,19 @@
       
 
       
+      // Cargar estado de "No guardar mis opciones"
+      const noSaveOptions = localStorage.getItem('no-save-options') === 'true';
+      document.getElementById('noSaveOptions').checked = noSaveOptions;
+      
+      if (noSaveOptions) {
+        const rememberChoice = document.getElementById('rememberChoice');
+        const rememberLabel = document.getElementById('rememberChoiceLabel');
+        rememberChoice.checked = false;
+        rememberChoice.disabled = true;
+        rememberLabel.style.opacity = '0.5';
+        rememberLabel.style.color = 'var(--text-muted)';
+      }
+      
       const savedTheme = localStorage.getItem('lol-tracker-theme');
       const themeSwitch = document.getElementById('themeSwitch');
       
@@ -1539,7 +1589,9 @@
       elements.nicknameInput.addEventListener('blur', (e) => {
         const val = e.target.value.trim();
         const isDianaName = val === 'Diana, Scorn of the Moon' || val === 'Diana, El desdén de la Luna';
-        if (val && !dianaEffectsActive && !isDianaName) {
+        const noSaveElement = document.getElementById('noSaveOptions');
+        const noSaveActive = noSaveElement ? noSaveElement.checked : false;
+        if (val && !dianaEffectsActive && !isDianaName && !noSaveActive) {
           localStorage.setItem('lol-tracker-nickname', val);
         }
       });
@@ -1618,16 +1670,47 @@
 
       // Event delegation para configuración
       document.addEventListener('change', (e) => {
-        if (e.target.matches('#rememberChoice')) {
+        if (e.target.matches('#noSaveOptions')) {
+          const noSave = e.target.checked;
+          const rememberChoice = document.getElementById('rememberChoice');
+          const rememberLabel = document.getElementById('rememberChoiceLabel');
+          
+          if (noSave) {
+            // Desactivar "Remember my role choice"
+            rememberChoice.checked = false;
+            rememberChoice.disabled = true;
+            rememberLabel.style.opacity = '0.5';
+            rememberLabel.style.color = 'var(--text-muted)';
+            
+            // Limpiar datos guardados excepto esta opción
+            const currentNoSave = localStorage.getItem('no-save-options');
+            localStorage.clear();
+            localStorage.setItem('no-save-options', 'true');
+          } else {
+            // Reactivar "Remember my role choice"
+            rememberChoice.disabled = false;
+            rememberChoice.checked = true;
+            rememberLabel.style.opacity = '1';
+            rememberLabel.style.color = '';
+            
+            localStorage.removeItem('no-save-options');
+          }
+        }
+        
+        // Solo guardar si "No guardar mis opciones" está desactivado
+        const noSaveElement = document.getElementById('noSaveOptions');
+        const noSaveActive = noSaveElement ? noSaveElement.checked : false;
+        
+        if (e.target.matches('#rememberChoice') && !noSaveActive) {
           localStorage.setItem('remember-choice', e.target.checked);
           if (!e.target.checked) {
             localStorage.removeItem('preferred-role');
           }
         }
-        if (e.target.matches('#autoFocus')) {
+        if (e.target.matches('#autoFocus') && !noSaveActive) {
           localStorage.setItem('auto-focus', e.target.checked);
         }
-        if (e.target.matches('#windowSize')) {
+        if (e.target.matches('#windowSize') && !noSaveActive) {
           localStorage.setItem('window-size', e.target.value);
         }
       });
@@ -1678,7 +1761,9 @@
             elements.nicknameInput.value = '';
           }
           
-          if (!dianaEffectsActive) {
+          const noSaveElement = document.getElementById('noSaveOptions');
+          const noSaveActive = noSaveElement ? noSaveElement.checked : false;
+          if (!dianaEffectsActive && !noSaveActive) {
             localStorage.setItem('selected-champion', championName);
           }
         } else {
@@ -1695,7 +1780,11 @@
           // Restore original placeholder
           elements.nicknameInput.placeholder = `${currentLang === 'es' ? 'Ej' : 'e.g'}: ${getRandomChampion()}`;
           
-          localStorage.removeItem('selected-champion');
+          const noSaveElement = document.getElementById('noSaveOptions');
+          const noSaveActive = noSaveElement ? noSaveElement.checked : false;
+          if (!noSaveActive) {
+            localStorage.removeItem('selected-champion');
+          }
         }
       }
 
@@ -1723,6 +1812,7 @@
         championInput.value = '';
         updateChampionPreview('');
         updateChampionList();
+        updatePreview();
       });
 
       // Load saved champion
@@ -1749,11 +1839,12 @@
       
       userColorSelect.addEventListener('change', (e) => {
         const selectedColor = e.target.value;
+        const noSaveActive = document.getElementById('noSaveOptions').checked;
         updateColorPreview(selectedColor);
-        if (selectedColor) {
+        if (selectedColor && !noSaveActive) {
           localStorage.setItem('user-color', selectedColor);
           colorPicker.value = '#bb86fc'; // Reset color picker
-        } else {
+        } else if (!noSaveActive) {
           localStorage.removeItem('user-color');
         }
         updatePreview();
@@ -1761,11 +1852,12 @@
       
       colorPicker.addEventListener('input', (e) => {
         const selectedColor = e.target.value;
+        const noSaveActive = document.getElementById('noSaveOptions').checked;
         updateColorPreview(selectedColor);
-        if (!dianaEffectsActive) {
+        if (!dianaEffectsActive && !noSaveActive) {
           localStorage.setItem('user-color', selectedColor);
         }
-        userColorSelect.value = ''; // Reset selector
+        userColorSelect.value = 'custom'; // Mostrar Custom
         updatePreview();
       });
       
@@ -1779,7 +1871,10 @@
         userColorSelect.value = '';
         colorPicker.value = '#bb86fc';
         updateColorPreview('');
-        localStorage.removeItem('user-color');
+        const noSaveActive = document.getElementById('noSaveOptions').checked;
+        if (!noSaveActive) {
+          localStorage.removeItem('user-color');
+        }
         updatePreview();
       });
       
@@ -1849,7 +1944,13 @@
       // Initial preview update
       updatePreview();
 
-      document.getElementById('randomizeAll').addEventListener('click', () => {
+      document.getElementById('randomizeAll').addEventListener('click', (e) => {
+        const btn = e.target;
+        btn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          btn.style.transform = 'scale(1)';
+        }, 100);
+        
         // Random champion
         const randomChampion = getRandomChampion();
         championInput.value = randomChampion;
@@ -1863,8 +1964,41 @@
         const randomColor = colors[Math.floor(Math.random() * colors.length)];
         userColorSelect.value = randomColor;
         updateColorPreview(randomColor);
-        localStorage.setItem('user-color', randomColor);
         
+        // Guardar solo si no está activo "No guardar mis opciones"
+        const noSaveElement = document.getElementById('noSaveOptions');
+        const noSaveActive = noSaveElement ? noSaveElement.checked : false;
+        if (!noSaveActive) {
+          localStorage.setItem('user-color', randomColor);
+        }
+        
+        updatePreview();
+      });
+
+      document.getElementById('clearAll').addEventListener('click', (e) => {
+        const btn = e.target;
+        btn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          btn.style.transform = 'scale(1)';
+        }, 100);
+        
+        // Limpiar nombre
+        elements.nicknameInput.value = '';
+        
+        // Limpiar campeón
+        championInput.value = '';
+        updateChampionPreview('');
+        
+        // Limpiar color
+        userColorSelect.value = '';
+        document.getElementById('colorPicker').value = '#bb86fc';
+        updateColorPreview('');
+        const noSaveActive = document.getElementById('noSaveOptions').checked;
+        if (!noSaveActive) {
+          localStorage.removeItem('user-color');
+        }
+        
+        // Actualizar previews
         updatePreview();
       });
 
