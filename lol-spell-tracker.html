@@ -2168,6 +2168,7 @@
               playersList: playersList,
               hostBackupId: myBackupId,
               secondaryHostId: secondaryHostId,
+              secondaryHostBackupId: secondaryHostBackupId,
               youAreSecondaryHost: (data.from === secondaryHostId),
               yourBackupId: (data.from === secondaryHostId) ? secondaryHostBackupId : null
             });
@@ -2810,10 +2811,19 @@
             `⚙️ Designado como Host Secundario (ID: ${data.yourBackupId})` : 
             `⚙️ Designated as Secondary Host (ID: ${data.yourBackupId})`, 'info', 4000);
         } else {
-          // Mostrar mensaje de conexión exitosa con backupID
+          // Guardar información del host secundario
+          if (data.secondaryHostId) {
+            secondaryHostId = data.secondaryHostId;
+            secondaryHostBackupId = data.secondaryHostBackupId;
+          }
+          
+          // Mostrar mensaje con información del host secundario
+          const secondaryHostPlayer = connectedPlayers.get(data.secondaryHostId);
+          const secondaryHostName = secondaryHostPlayer ? secondaryHostPlayer.nick : 'Player';
+          
           showToast(lang === 'es' ? 
-            `✓ Conectado exitosamente (Backup ID: ${data.hostBackupId})` : 
-            `✓ Successfully connected (Backup ID: ${data.hostBackupId})`, 'success', 3000);
+            `✓ Conectado (Backup: ${data.hostBackupId}) | Host Secundario: ${secondaryHostName}` : 
+            `✓ Connected (Backup: ${data.hostBackupId}) | Secondary Host: ${secondaryHostName}`, 'success', 4000);
         }
         
         updatePlayersBar();
@@ -3648,7 +3658,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.3.2 - 9/9/25 - connection success messages with backupID info
+    Lol Spell Tracker v0.3.3 - 9/9/25 - fix secondary host info for all guests
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
