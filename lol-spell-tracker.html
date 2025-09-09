@@ -2797,13 +2797,23 @@
           }
         });
         
-        // Guardar backupID del host y información de host secundario
+        // PASO 2.2: Recibir backupID y host secundario, mostrar mensaje
         hostBackupId = data.hostBackupId;
         
         if (data.youAreSecondaryHost) {
           secondaryHostId = myPeerId;
           secondaryHostBackupId = data.yourBackupId;
           myBackupId = data.yourBackupId;
+          
+          // Mostrar mensaje de host secundario
+          showToast(lang === 'es' ? 
+            `⚙️ Designado como Host Secundario (ID: ${data.yourBackupId})` : 
+            `⚙️ Designated as Secondary Host (ID: ${data.yourBackupId})`, 'info', 4000);
+        } else {
+          // Mostrar mensaje de conexión exitosa con backupID
+          showToast(lang === 'es' ? 
+            `✓ Conectado exitosamente (Backup ID: ${data.hostBackupId})` : 
+            `✓ Successfully connected (Backup ID: ${data.hostBackupId})`, 'success', 3000);
         }
         
         updatePlayersBar();
@@ -3638,7 +3648,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.3.1 - 9/9/25 - host schema implementation
+    Lol Spell Tracker v0.3.2 - 9/9/25 - connection success messages with backupID info
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
