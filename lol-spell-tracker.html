@@ -2815,39 +2815,8 @@
       if (data.from === myPeerId) return;
       if (!validateEventData(data)) return;
 
+      // hello messages are handled directly in P2P connections, not here
       if (data.a === 'hello') {
-        const sanitizedNick = sanitizeNickname(data.nick);
-        connectedPlayers.set(data.from, { nick: sanitizedNick, champion: data.champion, color: data.color, lastPong: Date.now() });
-        updatePlayersBar();
-        if (isHost) {
-          broadcastPlayerList();
-          const conn = connections.find(c => c.peer === data.from);
-          if (conn) {
-            conn.send({ a: 'hostInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
-            sendFullState(conn);
-          }
-          
-          // Designar host secundario (primer invitado) - REPLICAR setupConnection
-          const guestPlayers = Array.from(connectedPlayers.keys()).filter(id => !connectedPlayers.get(id).isSelf);
-          if (guestPlayers.length === 1) {
-            secondaryHostId = data.from;
-            secondaryHostBackupId = generateShortId();
-            
-            sendEvent({
-              a: 'secondaryHostDesignated',
-              secondaryHostId: data.from,
-              joinOrder: guestPlayers
-            });
-            
-            // Enviar backup ID al host secundario
-            const conn = connections.find(c => c.peer === data.from);
-            if (conn) {
-              conn.send({ a: 'secondaryHostBackupId', id: secondaryHostBackupId, from: myPeerId });
-            }
-            
-            updatePlayersBar();
-          }
-        }
         return;
       }
       
@@ -3680,7 +3649,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.2.15 - 9/9/25 - revert to v0.2.2 P2P system
+    Lol Spell Tracker v0.2.16 - 9/9/25 - fix image flickering by removing double updatePlayersBar
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
