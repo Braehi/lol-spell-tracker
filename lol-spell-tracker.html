@@ -520,6 +520,21 @@
       color: var(--warning-border);
     }
 
+    /* Smite especial - sin filtro oscuro, solo referencia visual */
+    .static-timer.smite-reference::before {
+      display: none;
+    }
+
+    .static-timer.smite-reference {
+      cursor: default;
+      opacity: 0.8;
+    }
+
+    .static-timer.smite-reference:hover {
+      border-color: var(--border);
+      box-shadow: none;
+    }
+
     /* Desplegable - con animación suave */
     .spell-select {
       width: 68px;
@@ -867,6 +882,7 @@
   <link rel="preload" href="./images/SummonerExhaust.png" as="image">
   <link rel="preload" href="./images/SummonerHaste.png" as="image">
   <link rel="preload" href="./images/SummonerHeal.png" as="image">
+  <link rel="preload" href="./images/SummonerSmite.png" as="image">
   <link rel="preload" href="./images/SummonerTeleport.png" as="image">
   <link rel="preload" href="./images/Support_icon.png" as="image">
   <link rel="preload" href="./images/Top_icon.png" as="image">
@@ -1299,7 +1315,8 @@
       exhaust: { duration: 210, icon: './images/SummonerExhaust.png' },
       cleanse: { duration: 210, icon: './images/SummonerBoost.png' },
       ghost: { duration: 180, icon: './images/SummonerHaste.png' },
-      barrier: { duration: 210, icon: './images/SummonerBarrier.png' }
+      barrier: { duration: 210, icon: './images/SummonerBarrier.png' },
+      smite: { duration: 90, icon: './images/SummonerSmite.png' }
     };
 
     const roles = ['Top', 'Jungle', 'Middle', 'Bottom', 'Support'];
@@ -1310,7 +1327,7 @@
       "./images/Bottom_icon.png",
       "./images/Support_icon.png"
     ];
-    const defaultSpells = ['teleport', 'ignite', 'teleport', 'barrier', 'heal'];
+    const defaultSpells = ['teleport', 'smite', 'teleport', 'barrier', 'heal'];
     const keyMap = { '1': 0, '2': 1, '3': 2, '4': 3, '5': 4 };
     let timerBoxes = [];
     let staticTimers = [];
@@ -1565,6 +1582,14 @@
       el.dataset.seconds = duration;
       el.dataset.initialDuration = duration;
       timeSpan.textContent = formatTime(duration);
+      
+      // Aplicar lógica especial para smite
+      if (spell === 'smite') {
+        el.classList.add('smite-reference');
+        timeSpan.textContent = '';
+      } else {
+        el.classList.remove('smite-reference');
+      }
 
       el.classList.remove('active', 'completed');
       row.classList.remove('secondary-active');
@@ -1740,10 +1765,20 @@
         const defaultSpell = defaultSpells[i];
         select.value = defaultSpell;
         const data = spellData[defaultSpell];
-        el.dataset.seconds = data.duration;
-        el.dataset.initialDuration = data.duration;
-        timeSpan.textContent = formatTime(data.duration);
         el.style.backgroundImage = `url(${data.icon})`;
+        
+        // Aplicar lógica especial para smite
+        if (defaultSpell === 'smite') {
+          el.classList.add('smite-reference');
+          el.dataset.seconds = 0;
+          el.dataset.initialDuration = 0;
+          timeSpan.textContent = '';
+        } else {
+          el.classList.remove('smite-reference');
+          el.dataset.seconds = data.duration;
+          el.dataset.initialDuration = data.duration;
+          timeSpan.textContent = formatTime(data.duration);
+        }
 
         el.classList.remove('active', 'completed');
         row.classList.remove('secondary-active');
@@ -2699,14 +2734,17 @@
           completed: box.classList.contains('completed'),
           startTime: box.startTime || null
         })),
-        secondary: staticTimers.map((el, i) => ({
-          i,
-          active: !!el.interval,
-          seconds: parseInt(el.dataset.seconds) || parseInt(el.dataset.initialDuration),
-          spell: spellSelects[i].value,
-          completed: el.classList.contains('completed'),
-          startTime: el.startTime || null
-        })),
+        secondary: staticTimers.map((el, i) => {
+          const spell = spellSelects[i].value;
+          return {
+            i,
+            active: !!el.interval,
+            seconds: spell === 'smite' ? 0 : (parseInt(el.dataset.seconds) || parseInt(el.dataset.initialDuration)),
+            spell: spell,
+            completed: el.classList.contains('completed'),
+            startTime: el.startTime || null
+          };
+        }),
         gameTimer: {
           active: isGameStarted,
           seconds: gameTimerEl.classList.contains('active') ? parseTime(gameTimerEl.textContent) : DURATIONS.GAME,
@@ -3051,6 +3089,15 @@
           el.dataset.initialDuration = d.duration;
           el.querySelector('span').textContent = formatTime(d.duration);
           el.style.backgroundImage = `url(${d.icon})`;
+          
+          // Aplicar clase especial para smite
+          if (data.spell === 'smite') {
+            el.classList.add('smite-reference');
+            el.querySelector('span').textContent = '';
+          } else {
+            el.classList.remove('smite-reference');
+          }
+          
           updateStaticTimerStyle(el);
         }
       }
@@ -3136,23 +3183,37 @@
         if (spellInfo) {
           el.style.backgroundImage = `url(${spellInfo.icon})`;
           el.dataset.initialDuration = spellInfo.duration;
+          
+          // Aplicar clase especial para smite
+          if (secData.spell === 'smite') {
+            el.classList.add('smite-reference');
+            el.querySelector('span').textContent = '';
+          } else {
+            el.classList.remove('smite-reference');
+          }
         }
 
         if (secData.completed) {
           el.classList.add('completed');
           el.dataset.seconds = parseInt(el.dataset.initialDuration);
-          timeSpan.textContent = formatTime(el.dataset.seconds);
+          if (secData.spell !== 'smite') {
+            timeSpan.textContent = formatTime(el.dataset.seconds);
+          }
         } else if (secData.active) {
           el.dataset.seconds = secData.seconds;
           if (secData.startTime) {
             el.startTime = secData.startTime;
           }
-          timeSpan.textContent = formatTime(secData.seconds);
+          if (secData.spell !== 'smite') {
+            timeSpan.textContent = formatTime(secData.seconds);
+          }
           startStaticTimer(el);
           row.classList.add('secondary-active');
         } else {
           el.dataset.seconds = secData.seconds;
-          timeSpan.textContent = formatTime(secData.seconds);
+          if (secData.spell !== 'smite') {
+            timeSpan.textContent = formatTime(secData.seconds);
+          }
         }
       });
     }
@@ -3471,6 +3532,12 @@
         staticTimer.dataset.initialDuration = data.duration;
         staticTimer.querySelector('span').textContent = formatTime(data.duration);
         staticTimer.style.backgroundImage = `url(${data.icon})`;
+        
+        // Aplicar clase especial si es smite por defecto
+        if (defaultSpell === 'smite') {
+          staticTimer.classList.add('smite-reference');
+          staticTimer.querySelector('span').textContent = '';
+        }
 
         select.addEventListener('change', () => {
           const spell = select.value;
@@ -3479,6 +3546,15 @@
           staticTimer.dataset.initialDuration = d.duration;
           staticTimer.querySelector('span').textContent = formatTime(d.duration);
           staticTimer.style.backgroundImage = `url(${d.icon})`;
+          
+          // Aplicar clase especial para smite
+          if (spell === 'smite') {
+            staticTimer.classList.add('smite-reference');
+            staticTimer.querySelector('span').textContent = '';
+          } else {
+            staticTimer.classList.remove('smite-reference');
+          }
+          
           updateStaticTimerStyle(staticTimer);
           
           // Actualizar icono de rol si los desplegables están visibles
@@ -3521,6 +3597,11 @@
 
         staticTimer.addEventListener('click', (e) => {
           if (staticTimer.classList.contains('active')) return;
+          
+          // Smite no es clickeable - solo referencia visual
+          const currentSpell = select.value;
+          if (currentSpell === 'smite') return;
+          
           startStaticTimer(staticTimer);
           row.classList.add('secondary-active');
           sendEvent({
