@@ -584,21 +584,6 @@
       <!-- Botón temporal para testeo -->
       <button id="randomizeAll" style="width: 100%; padding: 6px 12px; background: #f39c12; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 8px; font-size: 0.8rem; margin-top: 8px;" data-translate="randomAll">🎲 Random Champion + Color</button>
 
-      <!-- Tarjeta: Unirse a sala -->
-      <div class="role-card" 
-           role="radio" 
-           aria-checked="true"
-           tabindex="0"
-           style="border-color: rgba(187, 134, 252, 0.3);"
-           onclick="selectRole('join')" 
-           onkeydown="handleKeyDown(event, 'join')">
-        <div class="role-card-content">
-          <div class="role-icon">🚪</div>
-          <span data-translate="joinRoom">Join a room</span>
-        </div>
-        <input type="radio" name="role" value="join" id="role-join" checked />
-      </div>
-      
       <!-- Botón unirse -->
       <button id="joinRoomBtn" 
               class="action-button join" 
@@ -617,25 +602,9 @@
       </button>
     </div>
 
-    <!-- Tarjeta: Ser anfitrión -->
-    <div class="role-card" 
-         role="radio" 
-         aria-checked="false"
-         tabindex="0"
-         style="border-color: rgba(187, 134, 252, 0.3);"
-         onclick="selectRole('host')" 
-         onkeydown="handleKeyDown(event, 'host')">
-      <div class="role-card-content">
-        <div class="role-icon">👑</div>
-        <span data-translate="iAmHost">I am the host</span>
-      </div>
-      <input type="radio" name="role" value="host" id="role-host" />
-    </div>
-    
     <!-- Botón crear sala -->
     <button id="createRoomBtn" 
             class="action-button host" 
-            style="display: none;"
             aria-label="Create a new room as host">
       <span>🎮</span> 
       <span data-translate="createRoom">Create room</span>
@@ -667,13 +636,7 @@
       <summary data-translate="advancedSettings">Advanced settings</summary>
       <button id="helpBtn" style="position: absolute; right: 16px; top: 12px; width: 22px; height: 22px; background: var(--bg-card); border: 2px solid var(--border); color: var(--text-muted); border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center; transition: all 0.3s ease; opacity: 0.7; z-index: 10;">i</button>
       <div class="settings-panel">
-        <label id="rememberChoiceLabel">
-          <input type="checkbox" id="rememberChoice" checked> 
-          <span data-translate="rememberChoice">Remember my role choice</span>
-        </label>
-        <div style="position: relative; margin-bottom: 12px;">
-          <div class="help-text" id="helpRemember" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpRemember">Automatically selects your last used role (host/guest) when opening the app.</div>
-        </div>
+
         
         <label>
           <input type="checkbox" id="noSaveOptions"> 
@@ -1123,14 +1086,13 @@
       createRoomBtn: document.getElementById('createRoomBtn'),
       joinRoomBtn: document.getElementById('joinRoomBtn'),
       soloBtn: document.getElementById('soloBtn'),
-      roleHost: document.getElementById('role-host'),
-      roleJoin: document.getElementById('role-join'),
+
       modeSwitch: document.getElementById('modeSwitch'),
       statusDot: document.getElementById('statusDot'),
       statusText: document.getElementById('statusText'),
       nicknameError: document.getElementById('nicknameError'),
 
-      rememberChoice: document.getElementById('rememberChoice'),
+
       autoFocus: document.getElementById('autoFocus'),
       windowSize: document.getElementById('windowSize'),
       langSwitch: document.getElementById('langSwitch')
@@ -1265,114 +1227,15 @@
     function selectRole(role) {
       const isHost = role === 'host';
       
-      elements.roleHost.checked = isHost;
-      elements.roleJoin.checked = !isHost;
+      // Simplemente guardar el rol seleccionado
       
-      document.querySelectorAll('.role-card').forEach(card => {
-        card.setAttribute('aria-checked', 'false');
-        card.classList.remove('selected');
-      });
-      
-      const selectedCard = isHost ? 
-        elements.roleHost.closest('.role-card') : 
-        elements.roleJoin.closest('.role-card');
-      
-      selectedCard.setAttribute('aria-checked', 'true');
-      
-      // Animate selection with a subtle pulse
-      selectedCard.style.transform = 'scale(1.02)';
-      selectedCard.classList.add('selected');
-      
-      setTimeout(() => {
-        selectedCard.style.transform = '';
-      }, 200);
-      
-      // Guardar rol seleccionado si la opción está activada
-      if (elements.rememberChoice.checked) {
-        localStorage.setItem('preferred-role', role);
-      }
+
       
       updateRoleUI();
     }
 
     function updateRoleUI() {
-      const isJoin = elements.roleJoin.checked;
-      const joinRoleCard = elements.roleJoin.closest('.role-card');
-      const hostRoleCard = elements.roleHost.closest('.role-card');
-      const guestBox = document.querySelector('.guest-box');
-      
-      if (isJoin) {
-        // Animate out elements
-        joinRoleCard.classList.add('fade-out');
-        elements.createRoomBtn.classList.add('slide-out');
-        
-        setTimeout(() => {
-          joinRoleCard.style.display = 'none';
-          elements.createRoomBtn.style.display = 'none';
-          guestBox.classList.remove('compact');
-          
-          // Show and animate in new elements
-          elements.joinRoomBtn.style.display = 'flex';
-          elements.soloBtn.style.display = 'flex';
-          hostRoleCard.style.display = 'flex';
-          
-          elements.joinRoomBtn.classList.add('slide-in');
-          elements.soloBtn.classList.add('slide-in');
-          hostRoleCard.classList.add('fade-in');
-          
-          requestAnimationFrame(() => {
-            elements.joinRoomBtn.classList.remove('slide-in');
-            elements.joinRoomBtn.classList.add('visible');
-            
-            setTimeout(() => {
-              elements.soloBtn.classList.remove('slide-in');
-              elements.soloBtn.classList.add('visible');
-            }, 100);
-            
-            setTimeout(() => {
-              hostRoleCard.classList.remove('fade-in');
-              hostRoleCard.classList.add('visible');
-            }, 200);
-          });
-        }, 400);
-      } else {
-        // Animate out elements
-        elements.joinRoomBtn.classList.add('slide-out');
-        elements.soloBtn.classList.add('slide-out');
-        hostRoleCard.classList.add('fade-out');
-        
-        setTimeout(() => {
-          elements.joinRoomBtn.style.display = 'none';
-          elements.soloBtn.style.display = 'none';
-          hostRoleCard.style.display = 'none';
-          guestBox.classList.add('compact');
-          
-          // Show and animate in new elements
-          joinRoleCard.style.display = 'flex';
-          elements.createRoomBtn.style.display = 'flex';
-          
-          joinRoleCard.classList.add('fade-in');
-          elements.createRoomBtn.classList.add('slide-in');
-          
-          requestAnimationFrame(() => {
-            joinRoleCard.classList.remove('fade-in');
-            joinRoleCard.classList.add('visible');
-            
-            setTimeout(() => {
-              elements.createRoomBtn.classList.remove('slide-in');
-              elements.createRoomBtn.classList.add('visible');
-              elements.createRoomBtn.style.opacity = '1';
-            }, 100);
-          });
-        }, 400);
-      }
-      
-      // Clean up classes after animations
-      setTimeout(() => {
-        [joinRoleCard, hostRoleCard, elements.joinRoomBtn, elements.soloBtn, elements.createRoomBtn].forEach(el => {
-          el.classList.remove('fade-out', 'fade-in', 'slide-out', 'slide-in', 'visible');
-        });
-      }, 800);
+      // Ya no necesitamos cambiar la UI, todos los botones están visibles
     }
 
     // ====================== GESTIÓN DE VENTANAS ======================
@@ -1516,15 +1379,7 @@
       elements.modeSwitch.checked = savedMode;
       isTabMode = savedMode;
 
-      const preferredRole = localStorage.getItem('preferred-role');
-      if (preferredRole && elements.rememberChoice.checked) {
-        selectRole(preferredRole);
-      } else {
-        selectRole('join');
-      }
 
-      const rememberChoice = localStorage.getItem('remember-choice') !== 'false';
-      elements.rememberChoice.checked = rememberChoice;
 
       const autoFocus = localStorage.getItem('auto-focus') !== 'false';
       elements.autoFocus.checked = autoFocus;
@@ -1552,14 +1407,7 @@
       const noSaveOptions = localStorage.getItem('no-save-options') === 'true';
       document.getElementById('noSaveOptions').checked = noSaveOptions;
       
-      if (noSaveOptions) {
-        const rememberChoice = document.getElementById('rememberChoice');
-        const rememberLabel = document.getElementById('rememberChoiceLabel');
-        rememberChoice.checked = false;
-        rememberChoice.disabled = true;
-        rememberLabel.style.opacity = '0.5';
-        rememberLabel.style.color = 'var(--text-muted)';
-      }
+
       
       const savedTheme = localStorage.getItem('lol-tracker-theme');
       const themeSwitch = document.getElementById('themeSwitch');
@@ -1647,8 +1495,7 @@
       elements.nicknameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          const selectedRole = elements.roleHost.checked ? 'host' : 'join';
-          launchApp(selectedRole);
+          launchApp('join'); // Por defecto join al presionar Enter
         }
       });
 
@@ -1709,11 +1556,7 @@
             btn.style.transform = 'scale(1)';
           }, 100);
         }
-        if (e.target.closest('.role-card')) {
-          const card = e.target.closest('.role-card');
-          const role = card.querySelector('input[name="role"]')?.value;
-          if (role) selectRole(role);
-        }
+
       });
 
       // Event delegation para configuración
@@ -1724,23 +1567,11 @@
           const rememberLabel = document.getElementById('rememberChoiceLabel');
           
           if (noSave) {
-            // Desactivar "Remember my role choice"
-            rememberChoice.checked = false;
-            rememberChoice.disabled = true;
-            rememberLabel.style.opacity = '0.5';
-            rememberLabel.style.color = 'var(--text-muted)';
-            
             // Limpiar datos guardados excepto esta opción
             const currentNoSave = localStorage.getItem('no-save-options');
             localStorage.clear();
             localStorage.setItem('no-save-options', 'true');
           } else {
-            // Reactivar "Remember my role choice"
-            rememberChoice.disabled = false;
-            rememberChoice.checked = true;
-            rememberLabel.style.opacity = '1';
-            rememberLabel.style.color = '';
-            
             localStorage.removeItem('no-save-options');
           }
         }
@@ -1749,12 +1580,7 @@
         const noSaveElement = document.getElementById('noSaveOptions');
         const noSaveActive = noSaveElement ? noSaveElement.checked : false;
         
-        if (e.target.matches('#rememberChoice') && !noSaveActive) {
-          localStorage.setItem('remember-choice', e.target.checked);
-          if (!e.target.checked) {
-            localStorage.removeItem('preferred-role');
-          }
-        }
+
         if (e.target.matches('#autoFocus') && !noSaveActive) {
           localStorage.setItem('auto-focus', e.target.checked);
         }
