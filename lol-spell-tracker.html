@@ -932,8 +932,8 @@
 
   <!-- Botón show/hide en su propia fila, encima de los temporizadores -->
   <div class="toggle-row">
-    <button class="toggle-spells-btn" id="windowModeBtn" onclick="openInWindow()" style="display: none; margin-right: auto;">
-      🪟 Window
+    <button class="toggle-spells-btn" id="windowModeBtn" onclick="openInWindow()" style="display: none; margin-right: auto; margin-left: 2cm;">
+      ↗️ Open in a Window
     </button>
     <button class="toggle-spells-btn" id="toggleSpellsBtn">
       <span id="toggleArrow">➡️</span>
@@ -3049,8 +3049,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Mostrar botón de ventana si hay autojoin y modo ventana
-      if (launchConfig.shouldOpenAsWindow && launchConfig.autoJoin) {
+      // Mostrar botón de ventana si hay autojoin, modo ventana y no estamos ya en ventana
+      if (launchConfig.shouldOpenAsWindow && launchConfig.autoJoin && !window.opener) {
         const windowBtn = document.getElementById('windowModeBtn');
         if (windowBtn) windowBtn.style.display = 'flex';
       }
