@@ -768,16 +768,10 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.9.1 - 12/9/25 - Autoinvite UPDATE - Enhanced autojoin with window mode support
+      Lol Spell Tracker v0.9.1.1 - 12/9/25 - Autoinvite UPDATE - Enhanced autojoin with window mode support
     </div>
     
-    <!-- Debug info temporal -->
-    <div id="debugInfo" style="font-size: 0.7rem; color: #666; text-align: center; margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">
-      <div style="display: none;">Personaje guardado: <span id="debugChampion">-</span></div>
-      <div style="display: none;">Color guardado: <span id="debugColor">-</span></div>
-      <div style="display: none;">Nombre guardado: <span id="debugName">-</span></div>
-      <div style="display: none;">Modo guardado: <span id="debugMode">-</span></div>
-    </div>
+
   </div>
 
   <script>
@@ -2371,10 +2365,7 @@
       const debugName = document.getElementById('debugName');
       const debugMode = document.getElementById('debugMode');
       
-      if (debugChampion) debugChampion.textContent = localStorage.getItem('selected-champion') || 'Ninguno';
-      if (debugColor) debugColor.textContent = localStorage.getItem('user-color') || 'Ninguno';
-      if (debugName) debugName.textContent = localStorage.getItem('lol-tracker-nickname') || 'Ninguno';
-      if (debugMode) debugMode.textContent = localStorage.getItem('lol-tracker-mode') === 'tab' ? 'Pestaña' : 'Ventana';
+
     }
   </script>
 </body>
