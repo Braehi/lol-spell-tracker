@@ -9,6 +9,7 @@
   <script src="./modules/SpellManager.js"></script>
   <script src="./modules/TimerManager.js"></script>
   <script src="./modules/AudioManager.js"></script>
+  <script src="./modules/ConfigManager.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0a;
@@ -1091,21 +1092,11 @@
       }
     };
 
-    let lang = 'en';
-    if (urlLang) {
-      lang = urlLang;
-    } else {
-      const browserLang = navigator.language || navigator.userLanguage;
-      if (browserLang.startsWith('es')) {
-        lang = 'es';
-      }
-    }
+    let lang = urlLang || ConfigManager.getLanguage();
 
-    // Cargar tema desde configuración o localStorage
-    const themeToUse = urlTheme || localStorage.getItem('lol-tracker-theme') || 'dark';
-    if (themeToUse === 'light') {
-      document.body.classList.add('light-theme');
-    }
+    // Cargar tema desde configuración
+    const themeToUse = ConfigManager.getTheme(urlTheme);
+    ConfigManager.applyTheme(themeToUse);
 
     // Configuración inicial (se ejecutará en DOMContentLoaded)
 
@@ -1483,28 +1474,24 @@
       return AudioManager.soundEnabled(soundSwitch);
     }
 
-    // ====================== CAMBIO DE IDIOMA ======================
-    const langSwitch = document.getElementById('langSwitch');
+    // ====================== CONFIGURACIÓN ======================
     const soundSwitch = document.getElementById('soundSwitch');
-
-    langSwitch.addEventListener('change', () => {
-      lang = langSwitch.checked ? 'es' : 'en';
-      localStorage.setItem('lol-tracker-lang', lang);
-      updateTexts();
-      
-      const errorMsg = document.getElementById('timer-error-msg');
-      if (errorMsg.style.display === 'block') {
-        errorMsg.textContent = lang === 'es' ? '¿Temporizadores incorrectos? Comprueba la hora del sistema.' : 'Wrong timers? Check system time.';
+    
+    // Configurar event listeners con ConfigManager
+    ConfigManager.setupEventListeners({
+      onLanguageChange: (newLang) => {
+        lang = newLang;
+        updateTexts();
+        
+        const errorMsg = document.getElementById('timer-error-msg');
+        if (errorMsg.style.display === 'block') {
+          errorMsg.textContent = lang === 'es' ? '¿Temporizadores incorrectos? Comprueba la hora del sistema.' : 'Wrong timers? Check system time.';
+        }
+      },
+      onThemeChange: (newTheme) => {
+        // Tema ya aplicado por ConfigManager
       }
     });
-
-    const themeSwitch = document.getElementById('themeSwitch');
-    themeSwitch.addEventListener('change', () => {
-      document.body.classList.toggle('light-theme', themeSwitch.checked);
-      localStorage.setItem('lol-tracker-theme', themeSwitch.checked ? 'light' : 'dark');
-    });
-
-    soundSwitch.addEventListener('change', () => {});
 
     // ====================== ACTUALIZAR TEXTOS ======================
     function updateTexts() {
@@ -3032,8 +3019,7 @@
     // ====================== INICIO ======================
     document.addEventListener('DOMContentLoaded', () => {
       // Configuración inicial
-      document.getElementById('langSwitch').checked = lang === 'es';
-      document.getElementById('themeSwitch').checked = themeToUse === 'light';
+      ConfigManager.setupSwitches(lang, themeToUse);
       
       // Activar modo Diana si viene en la URL
       if (dianaMode) {
@@ -3611,7 +3597,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.8.5 - 11/9/25 - AudioManager modularized - Audio functionality centralized
+    Lol Spell Tracker v0.8.6 - 11/9/25 - ConfigManager modularized - Fixed launcher settings and no-save mode
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>

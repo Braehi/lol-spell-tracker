@@ -11,6 +11,7 @@
   <script src="modules/ChampionManager.js"></script>
   <script src="modules/ValidationManager.js"></script>
   <script src="modules/EventManager.js"></script>
+  <script src="modules/ConfigManager.js"></script>
   <style>
     /* Diana mode específico */
     body.diana-mode {
@@ -736,7 +737,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.8.5 - 11/9/25 - AudioManager modularized - Audio functionality centralized
+      Lol Spell Tracker v0.8.6 - 11/9/25 - ConfigManager modularized - Fixed launcher settings and no-save mode
     </div>
   </div>
 
@@ -855,16 +856,7 @@
       }
     };
 
-    let currentLang = "en";
-    const savedLang = localStorage.getItem("lol-tracker-lang");
-    if (savedLang) {
-      currentLang = savedLang;
-    } else {
-      const browserLang = navigator.language || navigator.userLanguage;
-      if (browserLang.startsWith('es')) {
-        currentLang = "es";
-      }
-    }
+    let currentLang = ConfigManager.getLanguage();
 
     // ====================== VARIABLES GLOBALES ======================
     // Champions list moved to ChampionManager.js
@@ -1093,10 +1085,10 @@
       statusText: document.getElementById('statusText'),
       nicknameError: document.getElementById('nicknameError'),
 
-
       autoFocus: document.getElementById('autoFocus'),
       windowSize: document.getElementById('windowSize'),
-      langSwitch: document.getElementById('langSwitch')
+      langSwitch: document.getElementById('langSwitch'),
+      themeSwitch: document.getElementById('themeSwitch')
     };
 
     let isTabMode = false;
@@ -1145,7 +1137,9 @@
 
     function switchLanguage() {
       currentLang = currentLang === "en" ? "es" : "en";
-      localStorage.setItem("lol-tracker-lang", currentLang);
+      if (!ConfigManager.isNoSaveMode()) {
+        ConfigManager.setLanguage(currentLang);
+      }
       elements.langSwitch.checked = currentLang === "es";
       updateTexts();
       showToast(t("modeChanged") + " " + (currentLang === "en" ? "English" : "Español"), "info", 2000);
@@ -1410,22 +1404,10 @@
       
 
       
-      const savedTheme = localStorage.getItem('lol-tracker-theme');
-      const themeSwitch = document.getElementById('themeSwitch');
+      const savedTheme = ConfigManager.getTheme();
       
-      if (savedTheme === 'auto') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        themeSwitch.checked = !prefersDark;
-        document.body.classList.toggle('light-theme', !prefersDark);
-      } else if (savedTheme === 'light') {
-        themeSwitch.checked = true;
-        document.body.classList.add('light-theme');
-      } else if (!savedTheme) {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        themeSwitch.checked = !prefersDark;
-        document.body.classList.toggle('light-theme', !prefersDark);
-        localStorage.setItem('lol-tracker-theme', 'auto');
-      }
+      ConfigManager.applyTheme(savedTheme);
+      elements.themeSwitch.checked = savedTheme === 'light';
       
       updateTexts();
       updateDatalist();
@@ -1521,19 +1503,21 @@
         }
       });
       
-      const themeSwitch = document.getElementById('themeSwitch');
-      
-      themeSwitch.addEventListener('change', () => {
-        document.body.classList.toggle('light-theme', themeSwitch.checked);
-        localStorage.setItem('lol-tracker-theme', themeSwitch.checked ? 'light' : 'dark');
+      elements.themeSwitch.addEventListener('change', () => {
+        document.body.classList.toggle('light-theme', elements.themeSwitch.checked);
+        if (ConfigManager.isNoSaveMode()) {
+          // No guardar nada
+        } else {
+          ConfigManager.setTheme(elements.themeSwitch.checked ? 'light' : 'dark');
+        }
         updateThemeLabels();
       });
       
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        const savedTheme = localStorage.getItem('lol-tracker-theme');
+        const savedTheme = ConfigManager.getTheme();
         if (savedTheme === 'auto') {
           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          themeSwitch.checked = !prefersDark;
+          elements.themeSwitch.checked = !prefersDark;
           document.body.classList.toggle('light-theme', !prefersDark);
           updateThemeLabels();
         }
