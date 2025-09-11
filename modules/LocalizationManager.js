@@ -28,7 +28,12 @@ const LocalizationManager = {
       players_plural: 'players',
       noPlayers: 'No players',
       playingSolo: 'Playing solo',
-      playingSoloHostLost: 'Playing solo (Host lost)'
+      playingSoloHostLost: 'Playing solo (Host lost)',
+      connectionLost: 'Connection lost',
+      reconnectedTo: 'Reconnected to',
+      connectedTo: 'Connected to',
+      startGame: 'Start Game',
+      resetAll: 'Reset All'
     },
     es: {
       waiting: 'Esperando jugadores...',
@@ -57,7 +62,12 @@ const LocalizationManager = {
       players_plural: 'jugadores',
       noPlayers: 'Sin jugadores',
       playingSolo: 'Jugando solo',
-      playingSoloHostLost: 'Jugando solo (Host perdido)'
+      playingSoloHostLost: 'Jugando solo (Host perdido)',
+      connectionLost: 'Conexión perdida',
+      reconnectedTo: 'Reconectado a',
+      connectedTo: 'Conectado a',
+      startGame: 'Iniciar Partida',
+      resetAll: 'Reiniciar Todo'
     }
   },
 

@@ -58,11 +58,40 @@ const SpellManager = {
     }
   },
 
+  // Traducciones de hechizos
+  spellTranslations: {
+    en: {
+      teleport: 'Teleport',
+      heal: 'Heal',
+      smite: 'Smite',
+      cleanse: 'Cleanse',
+      exhaust: 'Exhaust',
+      barrier: 'Barrier',
+      ghost: 'Ghost',
+      ignite: 'Ignite'
+    },
+    es: {
+      teleport: 'Teleportar',
+      heal: 'Curación',
+      smite: 'Aplastar',
+      cleanse: 'Limpiar',
+      exhaust: 'Extenuación',
+      barrier: 'Barrera',
+      ghost: 'Fantasmal',
+      ignite: 'Prender'
+    }
+  },
+
+  // Obtener nombre traducido de hechizo
+  getSpellName(spell, lang = 'en') {
+    return this.spellTranslations[lang][spell] || spell;
+  },
+
   // Crear opciones para select de hechizos
-  createSpellOptions() {
+  createSpellOptions(lang = 'en') {
     return Object.keys(this.spellData).map(spell => ({
       value: spell,
-      text: spell.charAt(0).toUpperCase() + spell.slice(1)
+      text: this.getSpellName(spell, lang)
     }));
   },
 
