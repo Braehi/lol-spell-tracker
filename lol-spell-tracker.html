@@ -962,7 +962,7 @@
     const urlLang = launchConfig.lang;
     
     // Manejar apertura como ventana si es necesario
-    if (launchConfig.shouldOpenAsWindow && launchConfig.autoJoin) {
+    if (launchConfig.autoJoin && localStorage.getItem('lol-tracker-mode') !== 'tab') {
       const windowSize = localStorage.getItem('window-size') || 'medium';
       const sizes = { small: [500, 700], medium: [500, 800], large: [600, 1080] };
       const [width, height] = sizes[windowSize];
