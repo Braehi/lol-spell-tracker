@@ -2181,27 +2181,11 @@
         
         // Verificar si hay datos guardados
         const hasUserData = localStorage.getItem('lol-tracker-nickname') || localStorage.getItem('selected-champion') || localStorage.getItem('user-color');
-        console.log('Datos encontrados:', {
-          nickname: localStorage.getItem('lol-tracker-nickname'),
-          champion: localStorage.getItem('selected-champion'),
-          color: localStorage.getItem('user-color')
-        });
         
         if (hasUserData) {
-          // Unirse directamente - redirigir al tracker con datos
+          // Unirse directamente - redirigir al tracker
           console.log('Datos encontrados, redirigiendo al tracker...');
-          const nickname = localStorage.getItem('lol-tracker-nickname') || '';
-          const champion = localStorage.getItem('selected-champion') || '';
-          const color = localStorage.getItem('user-color') || '';
-          
-          const params = new URLSearchParams({
-            autoJoin: inviteCode,
-            nick: nickname,
-            champion: champion,
-            color: color
-          });
-          
-          window.location.href = `lol-spell-tracker.html?${params.toString()}`;
+          window.location.href = `lol-spell-tracker.html?autoJoin=${inviteCode}`;
           return true;
         } else {
           // Mostrar mensaje de invitación
