@@ -770,6 +770,13 @@
     <div class="version-footer">
       Lol Spell Tracker v0.9.0 - 12/9/25 - Invite URL Testing - Share rooms with invite links
     </div>
+    
+    <!-- Debug info temporal -->
+    <div id="debugInfo" style="font-size: 0.7rem; color: #666; text-align: center; margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">
+      <div>Personaje guardado: <span id="debugChampion">-</span></div>
+      <div>Color guardado: <span id="debugColor">-</span></div>
+      <div>Nombre guardado: <span id="debugName">-</span></div>
+    </div>
   </div>
 
   <script>
@@ -2243,13 +2250,37 @@
       updateRoleUI();
       
       setupCustomizeButton();
+      updateDebugInfo();
       
       // Detectar si venimos de una invitación por enlace
       const urlParams = new URLSearchParams(window.location.search);
       const inviteId = urlParams.get('invite');
       
       if (inviteId) {
-        // Ocultar elementos cuando venimos de invitación
+        // Verificar si hay datos guardados
+        const hasUserData = localStorage.getItem('lol-tracker-nickname') || 
+                           localStorage.getItem('selected-champion') || 
+                           localStorage.getItem('user-color');
+        
+        if (hasUserData) {
+          // Auto-unirse directamente
+          const config = {
+            nick: localStorage.getItem('lol-tracker-nickname') || 'Player',
+            role: 'join',
+            theme: document.body.classList.contains('light-theme') ? 'light' : 'dark',
+            lang: currentLang,
+            diana: false,
+            champion: localStorage.getItem('selected-champion'),
+            color: localStorage.getItem('user-color'),
+            autoJoin: inviteId
+          };
+          
+          sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(config));
+          window.location.href = 'lol-spell-tracker.html';
+          return;
+        }
+        
+        // No hay datos - mostrar modo invitación
         const soloBtn = document.getElementById('soloBtn');
         const createBtn = document.getElementById('createRoomBtn');
         const advancedSettings = document.getElementById('advancedSettings');
@@ -2273,15 +2304,26 @@
           joinInviteBtn.innerHTML = '<span>💌</span> <span>Join Invite</span>';
           
           joinInviteBtn.addEventListener('click', () => {
+            // Guardar datos para próxima visita
+            const nickname = elements.nicknameInput.value.trim() || 'Player';
+            const champion = document.getElementById('championInput').value.trim();
+            const color = getUserColor();
+            
+            if (!ConfigManager.isNoSaveMode()) {
+              localStorage.setItem('lol-tracker-nickname', nickname);
+              if (champion) localStorage.setItem('selected-champion', champion);
+              if (color) localStorage.setItem('user-color', color);
+            }
+            
             // Usar protocolo de autoconexion
             const config = {
-              nick: elements.nicknameInput.value.trim() || 'Player',
+              nick: nickname,
               role: 'join',
               theme: document.body.classList.contains('light-theme') ? 'light' : 'dark',
               lang: currentLang,
               diana: dianaEffectsActive,
-              champion: document.getElementById('championInput').value.trim() || null,
-              color: getUserColor(),
+              champion: champion || null,
+              color: color,
               autoJoin: inviteId
             };
             
@@ -2320,6 +2362,16 @@
 
       updateStatus(t('readyToUse'), 'success');
     });
+    
+    function updateDebugInfo() {
+      const debugChampion = document.getElementById('debugChampion');
+      const debugColor = document.getElementById('debugColor');
+      const debugName = document.getElementById('debugName');
+      
+      if (debugChampion) debugChampion.textContent = localStorage.getItem('selected-champion') || 'Ninguno';
+      if (debugColor) debugColor.textContent = localStorage.getItem('user-color') || 'Ninguno';
+      if (debugName) debugName.textContent = localStorage.getItem('lol-tracker-nickname') || 'Ninguno';
+    }
   </script>
 </body>
 </html>
