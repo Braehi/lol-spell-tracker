@@ -932,6 +932,9 @@
 
   <!-- Botón show/hide en su propia fila, encima de los temporizadores -->
   <div class="toggle-row">
+    <button class="toggle-spells-btn" id="windowModeBtn" onclick="openInWindow()" style="display: none; transform: translateX(24px);">
+      🪟 Window
+    </button>
     <button class="toggle-spells-btn" id="toggleSpellsBtn">
       <span id="toggleArrow">➡️</span>
       <span id="toggleText">show</span>
@@ -961,42 +964,18 @@
     const urlTheme = launchConfig.theme;
     const urlLang = launchConfig.lang;
     
-    // Mostrar botón para abrir en ventana si es necesario
-    if (launchConfig.shouldOpenAsWindow && launchConfig.autoJoin) {
-      setTimeout(() => {
-        const banner = document.createElement('div');
-        banner.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          background: #2196f3;
-          color: white;
-          padding: 12px;
-          text-align: center;
-          z-index: 10000;
-          font-size: 0.9rem;
-        `;
-        banner.innerHTML = `
-          <span>🪟 Click to open in window mode: </span>
-          <button onclick="openInWindow()" style="background: white; color: #2196f3; border: none; padding: 4px 12px; border-radius: 4px; margin-left: 8px; cursor: pointer; font-weight: bold;">Open Window</button>
-          <button onclick="this.parentElement.remove()" style="background: transparent; color: white; border: 1px solid white; padding: 4px 8px; border-radius: 4px; margin-left: 8px; cursor: pointer;">×</button>
-        `;
-        document.body.appendChild(banner);
-        
-        window.openInWindow = () => {
-          const windowSize = localStorage.getItem('window-size') || 'medium';
-          const sizes = { small: [500, 700], medium: [500, 800], large: [600, 1080] };
-          const [width, height] = sizes[windowSize];
-          const opciones = `width=${width},height=${height},resizable=yes,scrollbars=no,titlebar=no,toolbar=no,location=no,status=no`;
-          
-          const newWindow = window.open(window.location.href, `LoLFlashTracker_${Date.now()}`, opciones);
-          if (newWindow) {
-            window.close();
-          }
-        };
-      }, 1000);
-    }
+    // Función para abrir en ventana
+    window.openInWindow = () => {
+      const windowSize = localStorage.getItem('window-size') || 'medium';
+      const sizes = { small: [500, 700], medium: [500, 800], large: [600, 1080] };
+      const [width, height] = sizes[windowSize];
+      const opciones = `width=${width},height=${height},resizable=yes,scrollbars=no,titlebar=no,toolbar=no,location=no,status=no`;
+      
+      const newWindow = window.open(window.location.href, `LoLFlashTracker_${Date.now()}`, opciones);
+      if (newWindow) {
+        window.close();
+      }
+    };
 
     let isHost = userRole === 'host';
     let isSoloMode = userRole === 'solo';
@@ -3058,6 +3037,12 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Mostrar botón de ventana si hay autojoin y modo ventana
+      if (launchConfig.shouldOpenAsWindow && launchConfig.autoJoin) {
+        const windowBtn = document.getElementById('windowModeBtn');
+        if (windowBtn) windowBtn.style.display = 'flex';
+      }
+      
       checkAutoJoin();
       // Configuración inicial
       ConfigManager.setupSwitches(lang, themeToUse);
