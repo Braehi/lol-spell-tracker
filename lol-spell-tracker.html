@@ -3050,6 +3050,7 @@
       ConfigManager.setupSwitches(lang, themeToUse);
       
       // Activar modo Diana si viene en la URL
+      const dianaMode = launchConfig.diana === true;
       if (dianaMode) {
         document.body.classList.add('diana-mode');
         const title = document.getElementById('appTitle');
