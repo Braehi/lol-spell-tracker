@@ -3049,8 +3049,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Mostrar botón de ventana si modo ventana está activado y no estamos ya en ventana
-      if (localStorage.getItem('lol-tracker-mode') !== 'tab' && !window.opener) {
+      // Mostrar botón de ventana si hay autojoin y modo ventana
+      if (launchConfig.shouldOpenAsWindow && launchConfig.autoJoin) {
         const windowBtn = document.getElementById('windowModeBtn');
         if (windowBtn) windowBtn.style.display = 'flex';
       }
