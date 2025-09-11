@@ -3049,8 +3049,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Mostrar botón de ventana si hay autojoin (independientemente del modo)
-      if (launchConfig.autoJoin) {
+      // Mostrar botón de ventana si hay autojoin y no estamos ya en ventana
+      if (launchConfig.autoJoin && !window.opener) {
         const windowBtn = document.getElementById('windowModeBtn');
         if (windowBtn) windowBtn.style.display = 'flex';
       }
