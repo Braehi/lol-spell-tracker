@@ -976,7 +976,7 @@
       
       const newWindow = window.open(window.location.href, `LoLFlashTracker_${Date.now()}`, opciones);
       if (newWindow) {
-        window.close();
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:1.2rem;color:#aaa;">✅ Opened in window. You can close this tab.</div>';
       }
     };
 
