@@ -932,7 +932,7 @@
 
   <!-- Botón show/hide en su propia fila, encima de los temporizadores -->
   <div class="toggle-row">
-    <button class="toggle-spells-btn" id="windowModeBtn" onclick="openInWindow()" style="display: none; transform: translateX(24px);">
+    <button class="toggle-spells-btn" id="windowModeBtn" onclick="openInWindow()" style="display: none; position: absolute; left: 0;">
       🪟 Window
     </button>
     <button class="toggle-spells-btn" id="toggleSpellsBtn">
@@ -971,9 +971,12 @@
       const [width, height] = sizes[windowSize];
       const opciones = `width=${width},height=${height},resizable=yes,scrollbars=no,titlebar=no,toolbar=no,location=no,status=no`;
       
+      // Preservar configuración de autojoin en sessionStorage para la nueva ventana
+      sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(launchConfig));
+      
       const newWindow = window.open(window.location.href, `LoLFlashTracker_${Date.now()}`, opciones);
       if (newWindow) {
-        window.close();
+        setTimeout(() => window.close(), 500);
       }
     };
 
