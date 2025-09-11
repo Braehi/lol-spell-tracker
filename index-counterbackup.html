@@ -11,7 +11,6 @@
   <script src="modules/ChampionManager.js"></script>
   <script src="modules/ValidationManager.js"></script>
   <script src="modules/EventManager.js"></script>
-  <script src="modules/ConfigManager.js"></script>
   <style>
     /* Diana mode específico */
     body.diana-mode {
@@ -137,11 +136,6 @@
       transform: rotate(90deg);
     }
 
-    .advanced-settings[open] .settings-panel {
-      max-height: 1200px;
-      opacity: 1;
-    }
-
     .settings-panel {
       padding: 16px;
       border-top: 1px solid var(--border);
@@ -149,10 +143,13 @@
       overflow: hidden;
       max-height: 0;
       opacity: 0;
-      transition: max-height 0.6s ease, opacity 0.6s ease, padding 0.6s ease;
+      transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.4s ease;
     }
 
-
+    .advanced-settings[open] .settings-panel {
+      max-height: 1200px;
+      opacity: 1;
+    }
 
     .settings-panel label {
       display: flex;
@@ -213,7 +210,7 @@
     }
 
     .section-separator::after {
-      content: "";
+      content: "⚡";
       position: absolute;
       left: 50%;
       top: 50%;
@@ -331,36 +328,6 @@
       border-color: #2563eb !important;
       color: white !important;
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
-    }
-    
-    @keyframes sparkleFloat {
-      0% {
-        opacity: 1;
-        transform: translateY(0) scale(0.5) rotate(0deg);
-      }
-      50% {
-        opacity: 0.8;
-        transform: translateY(-20px) scale(1) rotate(180deg);
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(-40px) scale(0.3) rotate(360deg);
-      }
-    }
-    
-    @keyframes flashSparkle {
-      0% {
-        opacity: 1;
-        transform: translate(0, 0) scale(0.3) rotate(0deg);
-      }
-      50% {
-        opacity: 0.9;
-        transform: translate(var(--random-x), var(--random-y)) scale(1.2) rotate(180deg);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(calc(var(--random-x) * 2), calc(var(--random-y) * 2)) scale(0.2) rotate(360deg);
-      }
     }
   </style>
   
@@ -579,22 +546,23 @@
   </div>
 
   <!-- Icono de la aplicación -->
-  <img src="./images/Flash.png" alt="Flash Icon" class="app-icon" onclick="createFlashSparkles(this)" style="cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1) rotate(5deg)'; this.style.filter='drop-shadow(0 0 15px #f39c12)'" onmouseout="this.style.transform='scale(1) rotate(0deg)'; this.style.filter='none'" />
+  <img src="./images/Flash.png" alt="Flash Icon" class="app-icon" />
   
   <!-- Título -->
   <h1>LoL Flash Tracker</h1>
 
   <!-- Formulario principal -->
-  <div class="form-group" style="align-items: center; justify-content: center; min-height: 100vh;">
+  <div class="form-group">
     <!-- Caja de invitado - elementos más usados -->
-    <div class="guest-box" style="position: relative; align-self: flex-start;">
-      <!-- Preview del nombre -->
-      <div style="position: relative; margin-bottom: 8px;">
-        <div id="userPreviewTop" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; font-weight: bold;"></div>
-        <div id="clickCounter" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 0.6rem; color: var(--text-muted); opacity: 0.3;"></div>
+    <div class="guest-box">
+      <!-- Input de nickname con autocompletado -->
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+        <label for="nickname" data-translate="yourName" style="margin: 0;">Your name</label>
+        <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); flex: 1;"></div>
+        <div id="userPreviewTop" style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; opacity: 0.8;"></div>
       </div>
-      <div class="nickname-container">
-        <div style="position: relative;">
+      <div class="nickname-container" style="display: flex; gap: 8px; align-items: center;">
+        <div style="flex: 1; position: relative;">
           <input type="text" 
                  id="nickname" 
                  placeholder="e.g: Ana" 
@@ -606,67 +574,16 @@
 
           <div class="error-message" id="nicknameError"></div>
         </div>
-
-      </div>
-      
-      <!-- Panel de personalización -->
-      <div id="customizePanel" style="position: relative; margin-top: 4px;">
-        <!-- Botón customizar -->
-        <button id="customizeBtn" style="width: 50%; padding: 6px 12px; background: var(--bg-tertiary); color: var(--text-primary); border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; margin: 0 auto 8px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; transition: all 0.3s ease; display: block;" data-translate="customize">🎨 Personalizar <span id="customizeArrow" style="transition: transform 0.3s ease;">▼</span></button>
-        
-        <!-- Contenido desplegable -->
-        <div id="customizeContent" style="max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.6s ease, opacity 0.6s ease; padding: 0 8px;">
-          <!-- Separador -->
-          <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 12px 0;"></div>
-          
-          <!-- Champion Icon -->
-          <label style="font-size: 0.8rem; margin-bottom: 4px; display: block;">
-            <span>✏️ <span data-translate="championIcon">Champion Icon:</span></span>
-          </label>
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-            <input type="text" id="championInput" placeholder="Type champion name..." data-translate-placeholder="championPlaceholder" style="flex: 1; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;" list="championList" autocomplete="off">
-            <datalist id="championList"></datalist>
-            <img id="championPreview" style="width: 32px; height: 32px; border-radius: 4px; border: 1px solid var(--border); display: none; object-fit: cover; flex-shrink: 0;" />
-            <button id="clearChampion" style="padding: 6px 10px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; transition: transform 0.1s ease;" data-translate="none">None</button>
-          </div>
-          
-          <!-- User Color -->
-          <label style="font-size: 0.8rem; margin-bottom: 4px; display: block;">
-            <span>🎨 <span data-translate="userColor">User Color:</span></span>
-          </label>
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-            <select id="userColor" style="flex: 0 0 140px; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;">
-              <option value="" data-translate="defaultColor">Default</option>
-              <option value="custom" data-translate="customColor">Custom</option>
-              <option value="#ff6b6b">🔴 Red</option>
-              <option value="#4ecdc4">🟢 Green</option>
-              <option value="#45b7d1">🔵 Blue</option>
-              <option value="#f9ca24">🟡 Yellow</option>
-              <option value="#f0932b">🟠 Orange</option>
-              <option value="#eb4d4b">🔴 Crimson</option>
-              <option value="#6c5ce7">🟣 Purple</option>
-              <option value="#a29bfe">🟣 Lavender</option>
-              <option value="#fd79a8">🥷 Pink</option>
-              <option value="#00b894">🟢 Teal</option>
-            </select>
-            <input type="color" id="colorPicker" value="#bb86fc" style="width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: none;">
-            <div id="colorPreview" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); background: var(--text-primary);"></div>
-            <button id="clearColor" style="padding: 4px 8px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.75rem; transition: transform 0.1s ease;" data-translate="none">None</button>
-          </div>
-          
-          <!-- Separador -->
-          <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 12px 0;"></div>
-          
-          <!-- Botón randomizar -->
-          <button id="randomizeAll" style="width: 100%; padding: 6px 12px; background: #f39c12; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 8px; font-size: 0.8rem;" data-translate="randomAll">🎲 Random Champion + Color</button>
-          
-          <!-- Botón Clear All -->
-          <button id="clearAll" style="width: 100%; padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 8px; font-size: 0.8rem;" data-translate="clearAll">🧹 Clear All</button>
+        <div id="championButton" 
+             style="width: 32px; height: 32px; padding: 8px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 1rem; transition: var(--transition); flex-shrink: 0; display: flex; align-items: center; justify-content: center;"
+             title="Random champion name"
+             onclick="randomizeName()">
+          🎲
         </div>
       </div>
-
-      <!-- Separador -->
-      <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 12px 0;"></div>
+      
+      <!-- Botón temporal para testeo -->
+      <button id="randomizeAll" style="width: 100%; padding: 6px 12px; background: #f39c12; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 8px; font-size: 0.8rem; margin-top: 8px;" data-translate="randomAll">🎲 Random Champion + Color</button>
 
       <!-- Botón unirse -->
       <button id="joinRoomBtn" 
@@ -753,9 +670,60 @@
         
         <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 20px 0;"></div>
         
-
+        <div id="userPreview" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin: 16px 0; font-size: 0.9rem;">
+          <span id="previewText" style="color: var(--text-primary);">Player</span>
+        </div>
         
-
+        <label>
+          <span>✏️ <span data-translate="championIcon">Champion Icon:</span></span>
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <input type="text" id="championInput" placeholder="Type champion name..." data-translate-placeholder="championPlaceholder" style="flex: 1; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;" list="championList" autocomplete="off">
+          <datalist id="championList"></datalist>
+          <img id="championPreview" style="width: 32px; height: 32px; border-radius: 4px; border: 1px solid var(--border); display: none; object-fit: cover; flex-shrink: 0;" />
+          <button id="clearChampion" style="padding: 6px 10px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.8rem; transition: transform 0.1s ease;" data-translate="none">None</button>
+        </div>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpChampionIcon" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpChampionIcon">Set a champion icon for others to see.</div>
+        </div>
+        
+        <label>
+          <span>🎨 <span data-translate="userColor">User Color:</span></span>
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <select id="userColor" style="flex: 0 0 140px; padding: 6px 8px; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.85rem;">
+            <option value="" data-translate="defaultColor">Default</option>
+            <option value="custom" data-translate="customColor">Custom</option>
+            <option value="#ff6b6b">🔴 Red</option>
+            <option value="#4ecdc4">🟢 Green</option>
+            <option value="#45b7d1">🔵 Blue</option>
+            <option value="#f9ca24">🟡 Yellow</option>
+            <option value="#f0932b">🟠 Orange</option>
+            <option value="#eb4d4b">🔴 Crimson</option>
+            <option value="#6c5ce7">🟣 Purple</option>
+            <option value="#a29bfe">🟣 Lavender</option>
+            <option value="#fd79a8">🩷 Pink</option>
+            <option value="#00b894">🟢 Teal</option>
+          </select>
+          <input type="color" id="colorPicker" value="#bb86fc" style="width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: none;">
+          <div id="colorPreview" style="width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); background: var(--text-primary);"></div>
+          <button id="clearColor" style="padding: 4px 8px; background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.75rem; transition: transform 0.1s ease;" data-translate="none">None</button>
+        </div>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpUserColor" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpUserColor">Choose a color for your name that others will see.</div>
+        </div>
+        
+        <button id="randomizeAll" style="width: 100%; padding: 6px 12px; background: #f39c12; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 8px; font-size: 0.8rem;" data-translate="randomAll">🎲 Random Champion + Color</button>
+        <div style="position: relative; margin-bottom: 8px;">
+          <div class="help-text" id="helpRandomAll" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpRandomAll">Randomly selects a champion name, sets it as your nickname, and picks a random color.</div>
+        </div>
+        
+        <button id="clearAll" style="width: 100%; padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-bottom: 12px; font-size: 0.8rem;" data-translate="clearAll">🧹 Clear All</button>
+        <div style="position: relative; margin-bottom: 12px;">
+          <div class="help-text" id="helpClearAll" style="display: none; font-size: 0.75rem; color: #7dd3fc; padding: 4px 0; margin-top: 4px; opacity: 0; max-height: 0; overflow: hidden; transition: opacity 0.4s ease, max-height 0.4s ease, padding 0.4s ease; font-family: 'Courier New', monospace;" data-translate="helpClearAll">Clears your nickname, champion icon, and color selection. Resets everything to default.</div>
+        </div>
+        
+        <div style="height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 20px 0;"></div>
         
         <button id="testDiana" style="width: 100%; padding: 8px 12px; background: #6c5ce7; color: white; border: none; border-radius: var(--radius); cursor: pointer; margin-top: 12px; font-size: 0.85rem;">🌙 Test Diana Easter Egg</button>
         
@@ -768,7 +736,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.8.8 - 12/9/25 - Better Customization - Improved UI, animations, and user experience
+      Lol Spell Tracker v0.8.0 - 10/9/25 - Backup system fully implemented - MAJOR UPDATE
     </div>
   </div>
 
@@ -828,8 +796,7 @@
         helpRandomAll: "Randomly selects a champion name, sets it as your nickname, and picks a random color.",
         helpClearAll: "Clears your nickname, champion icon, and color selection. Resets everything to default.",
         noSaveOptions: "Don't save my options",
-        helpNoSave: "Prevents saving any preferences locally. Everything resets when you close the app.",
-        customize: "Customize"
+        helpNoSave: "Prevents saving any preferences locally. Everything resets when you close the app."
       },
       es: {
         ready: "Listo",
@@ -884,12 +851,20 @@
         helpRandomAll: "Selecciona aleatoriamente un nombre de campeón, lo establece como tu apodo y elige un color aleatorio.",
         helpClearAll: "Limpia tu apodo, icono de campeón y selección de color. Resetea todo a los valores por defecto.",
         noSaveOptions: "No guardar mis opciones",
-        helpNoSave: "Evita guardar cualquier preferencia localmente. Todo se resetea al cerrar la aplicación.",
-        customize: "Personalizar"
+        helpNoSave: "Evita guardar cualquier preferencia localmente. Todo se resetea al cerrar la aplicación."
       }
     };
 
-    let currentLang = ConfigManager.getLanguage();
+    let currentLang = "en";
+    const savedLang = localStorage.getItem("lol-tracker-lang");
+    if (savedLang) {
+      currentLang = savedLang;
+    } else {
+      const browserLang = navigator.language || navigator.userLanguage;
+      if (browserLang.startsWith('es')) {
+        currentLang = "es";
+      }
+    }
 
     // ====================== VARIABLES GLOBALES ======================
     // Champions list moved to ChampionManager.js
@@ -901,79 +876,211 @@
     let originalCreateText = '';
     let clickCount = 0;
     let clickTimer = null;
+    let comboDisplay = null;
     
-    // Customize button effects
-    function setupCustomizeButton() {
-      const btn = document.getElementById('customizeBtn');
-      const content = document.getElementById('customizeContent');
-      const arrow = document.getElementById('customizeArrow');
-      if (!btn || !content) return;
+    function randomizeName() {
+      const btn = document.getElementById('championButton');
       
-      const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7', '#a29bfe', '#fd79a8', '#00b894'];
-      let isExpanded = false;
+      // Contador de clicks rápidos
+      clickCount++;
       
-      btn.addEventListener('click', () => {
-        // Efectos de chispas aleatorias
-        createSparkles(btn);
-        
-        isExpanded = !isExpanded;
-        if (isExpanded) {
-          content.style.maxHeight = '400px';
-          content.style.opacity = '1';
-          if (arrow) arrow.style.transform = 'rotate(180deg)';
-        } else {
-          content.style.maxHeight = '0';
-          content.style.opacity = '0';
-          if (arrow) arrow.style.transform = 'rotate(0deg)';
-        }
-      });
-      
-      function createSparkles(button) {
-        const sparkleCount = Math.floor(Math.random() * 6) + 4;
-        const sparkles = ['✨', '⭐', '💫', '🌟', '✦', '✧'];
-        
-        for (let i = 0; i < sparkleCount; i++) {
-          const sparkle = document.createElement('div');
-          sparkle.textContent = sparkles[Math.floor(Math.random() * sparkles.length)];
-          sparkle.style.cssText = `
-            position: absolute;
-            pointer-events: none;
-            font-size: ${Math.random() * 0.5 + 0.5}rem;
-            left: ${Math.random() * 100}%;
-            top: ${Math.random() * 100}%;
-            animation: sparkleFloat ${Math.random() * 1 + 1}s ease-out forwards;
-            z-index: 1000;
-          `;
-          
-          button.parentElement.appendChild(sparkle);
-          
-          setTimeout(() => sparkle.remove(), 2000);
-        }
+      if (clickTimer) {
+        clearTimeout(clickTimer);
       }
       
-      btn.addEventListener('mouseenter', () => {
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        const randomBg = colors[Math.floor(Math.random() * colors.length)];
-        btn.style.borderColor = randomColor;
-        btn.style.backgroundColor = randomBg;
-        btn.style.boxShadow = `0 0 15px ${randomColor}80`;
-      });
+      clickTimer = setTimeout(() => {
+        clickCount = 0;
+        if (comboDisplay) {
+          comboDisplay.style.opacity = '0';
+          setTimeout(() => {
+            comboDisplay.remove();
+            comboDisplay = null;
+          }, 800);
+        }
+      }, 10000);
       
-      btn.addEventListener('mouseleave', () => {
-        btn.style.borderColor = 'var(--border)';
-        btn.style.backgroundColor = 'var(--bg-tertiary)';
-        btn.style.boxShadow = 'none';
-      });
+      if (clickCount >= 3) {
+        if (!comboDisplay) {
+          comboDisplay = document.createElement('div');
+          comboDisplay.style.cssText = 'position: absolute; top: -40px; right: 0; color: var(--text-muted); font-size: 0.7rem; font-weight: normal; z-index: 1000; pointer-events: none; opacity: 0; transition: opacity 0.8s ease;';
+          btn.parentElement.style.position = 'relative';
+          btn.parentElement.appendChild(comboDisplay);
+          setTimeout(() => comboDisplay.style.opacity = '0.6', 10);
+        }
+        comboDisplay.textContent = `x${clickCount}`;
+      }
       
-      btn.addEventListener('mousedown', () => {
-        btn.style.transform = 'scale(0.95)';
-      });
+      // Verificar si el botón está bloqueado
+      if (btn.style.pointerEvents === 'none') {
+        return;
+      }
       
-      btn.addEventListener('mouseup', () => {
+      // Si hay efectos Diana activos, restaurar todo
+      if (dianaEffectsActive) {
+        const appIcon = document.querySelector('.app-icon');
+        const title = document.querySelector('h1');
+        
+        if (dianaPulseInterval) {
+          clearInterval(dianaPulseInterval);
+          dianaPulseInterval = null;
+        }
+        
+        document.body.classList.remove('diana-mode');
+        title.style.opacity = '0';
+        title.style.transform = 'translateY(20px) scale(1)';
+        appIcon.style.transform = 'scale(0.9) rotate(10deg)';
+        
+        setTimeout(() => {
+          appIcon.src = './images/Flash.png';
+          title.textContent = 'LoL Flash Tracker';
+          title.style.opacity = '1';
+          title.style.transform = 'translateY(0) scale(1)';
+          appIcon.style.transform = 'scale(1) rotate(0deg)';
+          
+          // Restaurar botones
+          const joinBtn = document.getElementById('joinRoomBtn');
+          const soloBtn = document.getElementById('soloBtn');
+          const createBtn = document.getElementById('createRoomBtn');
+          joinBtn.innerHTML = originalJoinText;
+          soloBtn.innerHTML = originalSoloText;
+          createBtn.innerHTML = originalCreateText;
+          joinBtn.style.background = '';
+          soloBtn.style.background = '';
+          createBtn.style.background = '';
+          createBtn.style.border = '';
+          joinBtn.style.boxShadow = '';
+          soloBtn.style.boxShadow = '';
+          createBtn.style.boxShadow = '';
+          
+          // Restaurar favicon
+          const favicon = document.querySelector('link[rel="icon"]');
+          favicon.href = './images/Flash.png';
+        }, 200);
+        
+        dianaEffectsActive = false;
+        
+        // Clear temporary Diana settings
+        window.tempDianaColor = null;
+        window.tempDianaChampion = null;
+      }
+      
+      let randomChampion = getRandomChampion();
+      
+      // 50% de probabilidad de cambiar Diana por otro campeón
+      if (randomChampion.toLowerCase() === 'diana' && Math.random() < 0.5) {
+        randomChampion = getRandomChampion();
+      }
+      
+      // Si es Diana y tema oscuro, activar easter egg
+      if (randomChampion.toLowerCase() === 'diana' && !document.body.classList.contains('light-theme')) {
+        dianaEffectsActive = true;
+        
         btn.style.transform = 'scale(1)';
-      });
+        btn.style.filter = 'grayscale(1)';
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.5';
+        
+        const dianaName = currentLang === 'es' ? 'Diana, El desdén de la Luna' : 'Diana, Scorn of the Moon';
+        elements.nicknameInput.value = dianaName;
+        
+        // Activar fondo Diana
+        document.body.classList.add('diana-mode');
+        
+        // Set Diana champion icon (temporary only)
+        const championInput = document.getElementById('championInput');
+        championInput.value = 'Diana';
+        const championPreview = document.getElementById('championPreview');
+        championPreview.src = './Champions_assets/Diana.png';
+        championPreview.style.display = 'block';
+        
+        // Set Diana gradient color (temporary only)
+        document.getElementById('userColor').value = '';
+        document.getElementById('colorPicker').value = '#87ceeb';
+        document.getElementById('colorPreview').style.background = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        
+        // Update champion button to show Diana icon
+        const championButton = document.getElementById('championButton');
+        championButton.innerHTML = `<img src="./Champions_assets/Diana.png" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">`;
+        championButton.title = 'Diana';
+        championButton.style.cursor = 'default';
+        championButton.style.opacity = '0.8';
+        championButton.onclick = null;
+        
+        // Store temporary Diana settings
+        window.tempDianaColor = 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        window.tempDianaChampion = 'Diana';
+        
+        // Sonido
+        const audio = new Audio('./sound/Diana_Select.ogg');
+        audio.volume = 0.5;
+        audio.play().catch(e => console.log('Audio blocked:', e));
+        
+        // Cambiar botones
+        const joinBtn = document.getElementById('joinRoomBtn');
+        const soloBtn = document.getElementById('soloBtn');
+        const createBtn = document.getElementById('createRoomBtn');
+        originalJoinText = joinBtn.innerHTML;
+        originalSoloText = soloBtn.innerHTML;
+        originalCreateText = createBtn.innerHTML;
+        
+        joinBtn.innerHTML = `<span>🌙</span> <span>${t('followLunari')}</span>`;
+        soloBtn.innerHTML = `<span>⚔️</span> <span>${t('fightSolari')}</span>`;
+        createBtn.innerHTML = `<span>🌙</span> <span>Reveal the Truth</span>`;
+        joinBtn.style.background = 'linear-gradient(45deg, #1e3a8a, #3730a3)';
+        soloBtn.style.background = 'linear-gradient(45deg, #374151, #1f2937)';
+        createBtn.style.background = 'linear-gradient(45deg, #0f172a, #1e293b)';
+        createBtn.style.border = '2px solid #e5e7eb';
+        joinBtn.style.boxShadow = '0 0 15px rgba(30, 58, 138, 0.5)';
+        soloBtn.style.boxShadow = '0 0 15px rgba(55, 65, 81, 0.5)';
+        createBtn.style.boxShadow = '0 0 15px rgba(15, 23, 42, 0.7)';
+        
+        // Cambiar icono y título
+        const appIcon = document.querySelector('.app-icon');
+        const title = document.querySelector('h1');
+        
+        title.style.opacity = '0';
+        title.style.transform = 'translateY(-20px)';
+        appIcon.style.transform = 'scale(0.8) rotate(-10deg)';
+        
+        setTimeout(() => {
+          appIcon.src = './Champions_assets/Diana.png';
+          title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> ${t('dianaText')} <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
+          title.style.opacity = '1';
+          title.style.transform = 'translateY(0) scale(1)';
+          appIcon.style.transform = 'scale(1.1) rotate(5deg)';
+          
+          // Cambiar favicon
+          const favicon = document.querySelector('link[rel="icon"]');
+          favicon.href = './Champions_assets/Diana.png';
+          
+          // Update preview with Diana icon and gradient
+          updatePreview();
+          
+          // Iniciar pulsaciones cada 2 segundos
+          dianaPulseInterval = setInterval(() => {
+            title.style.transform = 'translateY(0) scale(1.15)';
+            appIcon.style.transform = 'scale(1.15) rotate(5deg)';
+            
+            setTimeout(() => {
+              title.style.transform = 'translateY(0) scale(1)';
+              appIcon.style.transform = 'scale(1.1) rotate(5deg)';
+            }, 300);
+          }, 2000);
+        }, 200);
+        
+        setTimeout(() => {
+          btn.style.filter = '';
+          btn.style.pointerEvents = '';
+          btn.style.opacity = '';
+        }, 3000);
+        return;
+      }
+      
+      // Animación normal para otros campeones
+      elements.nicknameInput.value = randomChampion;
+      elements.nicknameInput.dispatchEvent(new Event('input'));
+      updatePreview();
     }
-
 
     const elements = {
       nicknameInput: document.getElementById('nickname'),
@@ -986,10 +1093,10 @@
       statusText: document.getElementById('statusText'),
       nicknameError: document.getElementById('nicknameError'),
 
+
       autoFocus: document.getElementById('autoFocus'),
       windowSize: document.getElementById('windowSize'),
-      langSwitch: document.getElementById('langSwitch'),
-      themeSwitch: document.getElementById('themeSwitch')
+      langSwitch: document.getElementById('langSwitch')
     };
 
     let isTabMode = false;
@@ -1038,9 +1145,7 @@
 
     function switchLanguage() {
       currentLang = currentLang === "en" ? "es" : "en";
-      if (!ConfigManager.isNoSaveMode()) {
-        ConfigManager.setLanguage(currentLang);
-      }
+      localStorage.setItem("lol-tracker-lang", currentLang);
       elements.langSwitch.checked = currentLang === "es";
       updateTexts();
       showToast(t("modeChanged") + " " + (currentLang === "en" ? "English" : "Español"), "info", 2000);
@@ -1297,20 +1402,30 @@
         document.getElementById('colorPreview').style.background = savedUserColor;
       }
       
+
+      
       // Cargar estado de "No guardar mis opciones"
       const noSaveOptions = localStorage.getItem('no-save-options') === 'true';
       document.getElementById('noSaveOptions').checked = noSaveOptions;
       
 
       
-
+      const savedTheme = localStorage.getItem('lol-tracker-theme');
+      const themeSwitch = document.getElementById('themeSwitch');
       
-
-      
-      const savedTheme = ConfigManager.getTheme();
-      
-      ConfigManager.applyTheme(savedTheme);
-      elements.themeSwitch.checked = savedTheme === 'light';
+      if (savedTheme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        themeSwitch.checked = !prefersDark;
+        document.body.classList.toggle('light-theme', !prefersDark);
+      } else if (savedTheme === 'light') {
+        themeSwitch.checked = true;
+        document.body.classList.add('light-theme');
+      } else if (!savedTheme) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        themeSwitch.checked = !prefersDark;
+        document.body.classList.toggle('light-theme', !prefersDark);
+        localStorage.setItem('lol-tracker-theme', 'auto');
+      }
       
       updateTexts();
       updateDatalist();
@@ -1406,21 +1521,19 @@
         }
       });
       
-      elements.themeSwitch.addEventListener('change', () => {
-        document.body.classList.toggle('light-theme', elements.themeSwitch.checked);
-        if (ConfigManager.isNoSaveMode()) {
-          // No guardar nada
-        } else {
-          ConfigManager.setTheme(elements.themeSwitch.checked ? 'light' : 'dark');
-        }
+      const themeSwitch = document.getElementById('themeSwitch');
+      
+      themeSwitch.addEventListener('change', () => {
+        document.body.classList.toggle('light-theme', themeSwitch.checked);
+        localStorage.setItem('lol-tracker-theme', themeSwitch.checked ? 'light' : 'dark');
         updateThemeLabels();
       });
       
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        const savedTheme = ConfigManager.getTheme();
+        const savedTheme = localStorage.getItem('lol-tracker-theme');
         if (savedTheme === 'auto') {
           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          elements.themeSwitch.checked = !prefersDark;
+          themeSwitch.checked = !prefersDark;
           document.body.classList.toggle('light-theme', !prefersDark);
           updateThemeLabels();
         }
@@ -1437,7 +1550,13 @@
         if (e.target.closest('#soloBtn')) {
           launchApp('solo');
         }
-
+        if (e.target.closest('#championButton')) {
+          const btn = e.target.closest('#championButton');
+          btn.style.transform = 'scale(0.9)';
+          setTimeout(() => {
+            btn.style.transform = 'scale(1)';
+          }, 100);
+        }
 
       });
 
@@ -1500,7 +1619,12 @@
           championPreview.src = fullPath;
           championPreview.style.display = 'block';
           
-
+          // Replace randomize button with champion image and disable functionality
+          championButton.innerHTML = `<img src="${fullPath}" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">`;
+          championButton.title = championName;
+          championButton.style.cursor = 'default';
+          championButton.style.opacity = '0.8';
+          championButton.onclick = null;
           
           // Update placeholder when champion is selected
           elements.nicknameInput.placeholder = currentLang === 'es' ? 'Introduce un nombre' : 'Set a name';
@@ -1521,7 +1645,12 @@
           championPreview.style.display = 'none';
           championPreview.src = '';
           
-
+          // Restore randomize button
+          championButton.innerHTML = '🎲';
+          championButton.title = 'Random champion name';
+          championButton.style.cursor = 'pointer';
+          championButton.style.opacity = '1';
+          championButton.onclick = randomizeName;
           
           // Restore original placeholder
           elements.nicknameInput.placeholder = `${currentLang === 'es' ? 'Ej' : 'e.g'}: ${getRandomChampion()}`;
@@ -1645,9 +1774,7 @@
         }
         
         // Get current champion and color (use temporary Diana settings if active)
-        const championInput = document.getElementById('championInput');
-        const selectedChampion = dianaEffectsActive ? 'Diana' : 
-          (championInput.value.trim() || localStorage.getItem('selected-champion'));
+        const selectedChampion = dianaEffectsActive ? 'Diana' : localStorage.getItem('selected-champion');
         let selectedColor;
         if (dianaEffectsActive) {
           selectedColor = 'linear-gradient(45deg, #ffffff, #87ceeb)';
@@ -1680,7 +1807,7 @@
             const championImg = document.createElement('img');
             championImg.src = `./Champions_assets/${fileName}.png`;
             championImg.style.cssText = container === previewTop ? 
-              'width: 32px; height: 32px; border-radius: 4px; object-fit: cover;' :
+              'width: 14px; height: 14px; border-radius: 2px; object-fit: cover;' :
               'width: 16px; height: 16px; border-radius: 2px; object-fit: cover;';
             championImg.onerror = () => championImg.style.display = 'none';
             container.appendChild(championImg);
@@ -1716,29 +1843,6 @@
           btn.style.transform = 'scale(1)';
         }, 100);
         
-        // Contador de clicks
-        clickCount++;
-        
-        if (clickTimer) {
-          clearTimeout(clickTimer);
-        }
-        
-        clickTimer = setTimeout(() => {
-          clickCount = 0;
-          const counter = document.getElementById('clickCounter');
-          if (counter) counter.style.opacity = '0.3';
-        }, 1000);
-        
-        if (clickCount > 5) {
-          const counter = document.getElementById('clickCounter');
-          if (counter) {
-            counter.textContent = `x${clickCount}`;
-            counter.style.opacity = '0.5';
-          }
-        }
-        
-
-        
         // Desactivar Diana easter egg si está activo
         if (dianaEffectsActive) {
           dianaEffectsActive = false;
@@ -1772,110 +1876,7 @@
         }
         
         // Random champion
-        let randomChampion = getRandomChampion();
-        
-        // 50% de probabilidad de cambiar Diana por otro campeón
-        if (randomChampion.toLowerCase() === 'diana' && Math.random() < 0.5) {
-          randomChampion = getRandomChampion();
-        }
-        
-        // Si es Diana y tema oscuro, activar easter egg
-        if (randomChampion.toLowerCase() === 'diana' && !document.body.classList.contains('light-theme')) {
-          dianaEffectsActive = true;
-          
-          // Deshabilitar botón por 5 segundos
-          btn.disabled = true;
-          btn.style.opacity = '0.5';
-          btn.style.cursor = 'not-allowed';
-          setTimeout(() => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-          }, 5000);
-          
-          const dianaName = currentLang === 'es' ? 'Diana, El desdén de la Luna' : 'Diana, Scorn of the Moon';
-          elements.nicknameInput.value = dianaName;
-          
-          // Activar fondo Diana
-          document.body.classList.add('diana-mode');
-          
-          // Set Diana champion icon (temporal, no guardar)
-          championInput.value = 'Diana';
-          const championPreview = document.getElementById('championPreview');
-          championPreview.src = './Champions_assets/Diana.png';
-          championPreview.style.display = 'block';
-          
-          // Set Diana gradient color (temporal, no guardar)
-          document.getElementById('userColor').value = '';
-          document.getElementById('colorPicker').value = '#87ceeb';
-          document.getElementById('colorPreview').style.background = 'linear-gradient(45deg, #ffffff, #87ceeb)';
-          
-          // NO guardar datos de Diana para evitar problemas al recargar
-          localStorage.removeItem('selected-champion');
-          localStorage.removeItem('lol-tracker-nickname');
-          localStorage.removeItem('user-color');
-          
-          // Sonido
-          const audio = new Audio('./sound/Diana_Select.ogg');
-          audio.volume = 0.5;
-          audio.play().catch(e => console.log('Audio blocked:', e));
-          
-          // Cambiar botones
-          const joinBtn = document.getElementById('joinRoomBtn');
-          const soloBtn = document.getElementById('soloBtn');
-          const createBtn = document.getElementById('createRoomBtn');
-          originalJoinText = joinBtn.innerHTML;
-          originalSoloText = soloBtn.innerHTML;
-          originalCreateText = createBtn.innerHTML;
-          
-          joinBtn.innerHTML = `<span>🌙</span> <span>${t('followLunari')}</span>`;
-          soloBtn.innerHTML = `<span>⚔️</span> <span>${t('fightSolari')}</span>`;
-          createBtn.innerHTML = `<span>🌙</span> <span>Reveal the Truth</span>`;
-          joinBtn.style.background = 'linear-gradient(45deg, #1e3a8a, #3730a3)';
-          soloBtn.style.background = 'linear-gradient(45deg, #374151, #1f2937)';
-          createBtn.style.background = 'linear-gradient(45deg, #0f172a, #1e293b)';
-          createBtn.style.border = '2px solid #e5e7eb';
-          joinBtn.style.boxShadow = '0 0 15px rgba(30, 58, 138, 0.5)';
-          soloBtn.style.boxShadow = '0 0 15px rgba(55, 65, 81, 0.5)';
-          createBtn.style.boxShadow = '0 0 15px rgba(15, 23, 42, 0.7)';
-          
-          // Cambiar icono y título
-          const appIcon = document.querySelector('.app-icon');
-          const title = document.querySelector('h1');
-          
-          title.style.opacity = '0';
-          title.style.transform = 'translateY(-20px)';
-          appIcon.style.transform = 'scale(0.8) rotate(-10deg)';
-          
-          setTimeout(() => {
-            appIcon.src = './Champions_assets/Diana.png';
-            title.innerHTML = `<span style="filter: grayscale(1) brightness(2);">🌙</span> ${t('dianaText')} <span style="filter: grayscale(1) brightness(2);">🌙</span>`;
-            title.style.opacity = '1';
-            title.style.transform = 'translateY(0) scale(1)';
-            appIcon.style.transform = 'scale(1.1) rotate(5deg)';
-            
-            // Cambiar favicon
-            const favicon = document.querySelector('link[rel="icon"]');
-            favicon.href = './Champions_assets/Diana.png';
-            
-            // Update preview with Diana icon and gradient
-            updatePreview();
-            
-            // Iniciar pulsaciones cada 2 segundos
-            dianaPulseInterval = setInterval(() => {
-              title.style.transform = 'translateY(0) scale(1.15)';
-              appIcon.style.transform = 'scale(1.15) rotate(5deg)';
-              
-              setTimeout(() => {
-                title.style.transform = 'translateY(0) scale(1)';
-                appIcon.style.transform = 'scale(1.1) rotate(5deg)';
-              }, 300);
-            }, 2000);
-          }, 200);
-          
-          return; // Salir temprano si es Diana
-        }
-        
+        const randomChampion = getRandomChampion();
         championInput.value = randomChampion;
         updateChampionPreview(randomChampion);
         
@@ -1885,16 +1886,14 @@
         // Random color
         const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7', '#a29bfe', '#fd79a8', '#00b894'];
         const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        userColorSelect.value = randomColor;
+        updateColorPreview(randomColor);
         
         // Guardar solo si no está activo "No guardar mis opciones"
         const noSaveElement = document.getElementById('noSaveOptions');
         const noSaveActive = noSaveElement ? noSaveElement.checked : false;
         if (!noSaveActive) {
-          userColorSelect.value = randomColor;
-          updateColorPreview(randomColor);
           localStorage.setItem('user-color', randomColor);
-          localStorage.setItem('selected-champion', randomChampion);
-          localStorage.setItem('lol-tracker-nickname', randomChampion);
         }
         
         updatePreview();
@@ -1986,7 +1985,13 @@
         document.getElementById('colorPicker').value = '#87ceeb';
         document.getElementById('colorPreview').style.background = 'linear-gradient(45deg, #ffffff, #87ceeb)';
         
-
+        // Update champion button to show Diana icon
+        const championButton = document.getElementById('championButton');
+        championButton.innerHTML = `<img src="./Champions_assets/Diana.png" style="width: 24px; height: 24px; border-radius: 4px; object-fit: cover;">`;
+        championButton.title = 'Diana';
+        championButton.style.cursor = 'default';
+        championButton.style.opacity = '0.8';
+        championButton.onclick = null;
         
         // Store temporary Diana settings
         window.tempDianaColor = 'linear-gradient(45deg, #ffffff, #87ceeb)';
@@ -2112,73 +2117,11 @@
       });
     }
 
-    // Efectos de chispas para el icono Flash
-    let flashCooldown = false;
-    
-    function createFlashSparkles(icon) {
-      if (flashCooldown) return;
-      
-      flashCooldown = true;
-      setTimeout(() => {
-        flashCooldown = false;
-      }, 3000);
-      
-      // Efecto de click
-      icon.style.transform = 'scale(0.95)';
-      setTimeout(() => {
-        icon.style.transform = 'scale(1.1) rotate(5deg)';
-      }, 150);
-      
-      const sparkleCount = Math.floor(Math.random() * 12) + 8;
-      const spellImages = [
-        './images/Flash.png',
-        './images/SummonerBarrier.png',
-        './images/SummonerBoost.png',
-        './images/SummonerDot.png',
-        './images/SummonerExhaust.png',
-        './images/SummonerHaste.png',
-        './images/SummonerHeal.png',
-        './images/SummonerSmite.png',
-        './images/SummonerTeleport.png'
-      ];
-      
-      for (let i = 0; i < sparkleCount; i++) {
-        const sparkle = document.createElement('img');
-        sparkle.src = spellImages[Math.floor(Math.random() * spellImages.length)];
-        
-        const randomX = (Math.random() - 0.5) * 300;
-        const randomY = (Math.random() - 0.5) * 300;
-        
-        const startX = Math.random() * window.innerWidth;
-        const startY = Math.random() * window.innerHeight;
-        
-        sparkle.style.cssText = `
-          position: fixed;
-          left: ${startX}px;
-          top: ${startY}px;
-          pointer-events: none;
-          width: ${Math.random() * 20 + 15}px;
-          height: ${Math.random() * 20 + 15}px;
-          z-index: 9999;
-          --random-x: ${randomX}px;
-          --random-y: ${randomY}px;
-          animation: flashSparkle ${Math.random() * 1.5 + 1.5}s ease-out forwards;
-        `;
-        
-        document.body.appendChild(sparkle);
-        
-        setTimeout(() => sparkle.remove(), 3000);
-      }
-    }
-    
     // ====================== INICIO DE LA APLICACIÓN ======================
     window.addEventListener('load', () => {
       loadSettings();
       setupEventListeners();
       updateRoleUI();
-      
-      setupCustomizeButton();
-
       
       setTimeout(() => {
         elements.nicknameInput.focus();
