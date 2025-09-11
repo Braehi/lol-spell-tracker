@@ -2183,10 +2183,10 @@
         const hasUserData = localStorage.getItem('nickname') || localStorage.getItem('selected-champion') || localStorage.getItem('user-color');
         
         if (hasUserData) {
-          // Unirse directamente
-          console.log('Datos encontrados, uniendo directamente...');
-          // TODO: Abrir tracker y unirse automáticamente
-          showToast('Joining room automatically...', 'success', 2000);
+          // Unirse directamente - redirigir al tracker
+          console.log('Datos encontrados, redirigiendo al tracker...');
+          window.location.href = `lol-spell-tracker.html?autoJoin=${inviteCode}`;
+          return true;
         } else {
           // Mostrar mensaje de invitación
           showInviteMessage(inviteCode);

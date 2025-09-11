@@ -3000,7 +3000,27 @@
     }
 
     // ====================== INICIO ======================
+    // Auto-join desde invitación
+    function checkAutoJoin() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const autoJoinCode = urlParams.get('autoJoin');
+      
+      if (autoJoinCode) {
+        console.log('Auto-joining room:', autoJoinCode);
+        isHost = false;
+        
+        setTimeout(() => {
+          document.getElementById('roomId').value = autoJoinCode;
+          connectToHost();
+        }, 500);
+        
+        return true;
+      }
+      return false;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+      checkAutoJoin();
       // Configuración inicial
       ConfigManager.setupSwitches(lang, themeToUse);
       
