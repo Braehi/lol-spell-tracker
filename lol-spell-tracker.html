@@ -3032,7 +3032,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      checkAutoJoin();
       // Configuración inicial
       ConfigManager.setupSwitches(lang, themeToUse);
       
@@ -3543,6 +3542,9 @@
       
       updatePlayersBar();
     }
+    
+    // Ejecutar auto-join después de que todo esté inicializado
+    checkAutoJoin();
     });
 
     // ====================== FUNCIÓN SHOWTOAST ======================
