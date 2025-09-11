@@ -768,7 +768,7 @@
     
     <!-- Version footer -->
     <div class="version-footer">
-      Lol Spell Tracker v0.8.8 - 12/9/25 - Better Customization - Improved UI, animations, and user experience
+      Lol Spell Tracker v0.9.0 - 12/9/25 - Invite URL Testing - Share rooms with invite links
     </div>
   </div>
 
@@ -2171,8 +2171,76 @@
       }
     }
     
+    // Detección de invitación
+    function checkInviteUrl() {
+      const path = window.location.pathname;
+      const match = path.match(/\/i\/([A-Z0-9]{6})$/);
+      
+      if (match) {
+        const inviteCode = match[1];
+        console.log('Invitación detectada:', inviteCode);
+        
+        // Verificar si hay datos guardados
+        const hasUserData = localStorage.getItem('nickname') || localStorage.getItem('selected-champion') || localStorage.getItem('user-color');
+        
+        if (hasUserData) {
+          // Unirse directamente
+          console.log('Datos encontrados, uniendo directamente...');
+          // TODO: Abrir tracker y unirse automáticamente
+          showToast('Joining room automatically...', 'success', 2000);
+        } else {
+          // Mostrar mensaje de invitación
+          showInviteMessage(inviteCode);
+        }
+        
+        return true;
+      }
+      return false;
+    }
+    
+    function showInviteMessage(code) {
+      const messageDiv = document.createElement('div');
+      messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 1000;
+        font-size: 0.9rem;
+        text-align: center;
+      `;
+      messageDiv.innerHTML = `
+        📨 <strong>You've been invited to join room: ${code}</strong><br>
+        <small>Customize your profile below, then click "Join Room" to connect!</small>
+      `;
+      
+      document.body.appendChild(messageDiv);
+      
+      // Auto-llenar el campo de room ID
+      setTimeout(() => {
+        const roomInput = document.getElementById('roomId');
+        if (roomInput) {
+          roomInput.value = code;
+        }
+      }, 100);
+      
+      // Remover mensaje después de 8 segundos
+      setTimeout(() => {
+        if (messageDiv.parentNode) {
+          messageDiv.remove();
+        }
+      }, 8000);
+    }
+
     // ====================== INICIO DE LA APLICACIÓN ======================
     window.addEventListener('load', () => {
+      // Verificar invitación antes de inicializar
+      checkInviteUrl();
       loadSettings();
       setupEventListeners();
       updateRoleUI();

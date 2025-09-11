@@ -1523,6 +1523,7 @@
           <div class="input-group">
             <input type="text" id="myShortId" readonly value="${trans.generating}" style="font-size: 1rem; text-align: center;">
             <button onclick="copyId()">${trans.copy}</button>
+            <button id="inviteBtn" onclick="generateInviteLink()" style="background: #4ecdc4; margin-left: 8px; transition: all 0.3s ease;" onmouseenter="this.style.background='#45b7d1'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='#4ecdc4'; this.style.transform='scale(1)';" onmousedown="this.style.transform='scale(0.95)';" onmouseup="this.style.transform='scale(1.05)';">📤 Invite</button>
           </div>
           <div class="status" id="hostStatus">
             <span>🟢 ${trans.waiting}</span>
@@ -1578,6 +1579,40 @@
       document.execCommand('copy');
       input.value = trans.copy;
       setTimeout(() => { input.value = shortId; }, 1000);
+    }
+    
+    function generateInviteLink() {
+      if (!shortId || shortId === 'Generating...') {
+        showToast('Wait for room ID to generate', 'error', 2000);
+        return;
+      }
+      
+      const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
+      const inviteUrl = `${baseUrl}/i/${shortId}`;
+      
+      navigator.clipboard.writeText(inviteUrl).then(() => {
+        const btn = document.getElementById('inviteBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✓ Copied!';
+        btn.style.background = '#00b894';
+        
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.style.background = '#4ecdc4';
+        }, 2000);
+        
+        showToast('Invite link copied to clipboard!', 'success', 2000);
+      }).catch(() => {
+        // Fallback para navegadores sin clipboard API
+        const tempInput = document.createElement('input');
+        tempInput.value = inviteUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        
+        showToast('Invite link copied!', 'success', 2000);
+      });
     }
     
 
@@ -3533,6 +3568,7 @@
     // Exponer funciones globales
     window.updateTexts = updateTexts;
     window.copyId = copyId;
+    window.generateInviteLink = generateInviteLink;
     window.pasteId = pasteId;
     window.connectToHost = connectToHost;
     window.showToast = showToast;
@@ -3545,7 +3581,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.8.8 - 12/9/25 - Better Customization - Improved UI, animations, and user experience
+    Lol Spell Tracker v0.9.0 - 12/9/25 - Invite URL Testing - Share rooms with invite links
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
