@@ -962,7 +962,11 @@
     const urlLang = launchConfig.lang;
     
     // Manejar apertura como ventana si es necesario
-    if (launchConfig.autoJoin && localStorage.getItem('lol-tracker-mode') !== 'tab') {
+    const trackerMode = localStorage.getItem('lol-tracker-mode');
+    console.log('AutoJoin Debug:', { autoJoin: launchConfig.autoJoin, trackerMode, shouldOpenWindow: trackerMode !== 'tab' });
+    
+    if (launchConfig.autoJoin && trackerMode !== 'tab') {
+      console.log('Opening in window mode');
       const windowSize = localStorage.getItem('window-size') || 'medium';
       const sizes = { small: [500, 700], medium: [500, 800], large: [600, 1080] };
       const [width, height] = sizes[windowSize];
@@ -972,6 +976,8 @@
       if (newWindow) {
         window.close(); // Cerrar la pestaña actual
       }
+    } else {
+      console.log('Not opening window:', { hasAutoJoin: !!launchConfig.autoJoin, isTabMode: trackerMode === 'tab' });
     }
 
     let isHost = userRole === 'host';
