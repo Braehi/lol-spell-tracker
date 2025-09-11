@@ -3082,6 +3082,20 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Verificación forzada de modo ventana para autojoin
+      if (launchConfig.autoJoin && localStorage.getItem('lol-tracker-mode') !== 'tab') {
+        const windowSize = localStorage.getItem('window-size') || 'medium';
+        const sizes = { small: [500, 700], medium: [500, 800], large: [600, 1080] };
+        const [width, height] = sizes[windowSize];
+        const opciones = `width=${width},height=${height},resizable=yes,scrollbars=no,titlebar=no,toolbar=no,location=no,status=no`;
+        
+        const newWindow = window.open(window.location.href, `LoLFlashTracker_${Date.now()}`, opciones);
+        if (newWindow) {
+          window.close();
+          return;
+        }
+      }
+      
       checkAutoJoin();
       // Configuración inicial
       ConfigManager.setupSwitches(lang, themeToUse);
