@@ -2238,14 +2238,26 @@
 
     // ====================== INICIO DE LA APLICACIÓN ======================
     window.addEventListener('load', () => {
-      // Verificar invitación antes de inicializar
-      checkInviteUrl();
       loadSettings();
       setupEventListeners();
       updateRoleUI();
       
       setupCustomizeButton();
-
+      
+      // Detectar si venimos de una invitación por enlace
+      const urlParams = new URLSearchParams(window.location.search);
+      const inviteId = urlParams.get('invite');
+      
+      if (inviteId) {
+        // Ocultar elementos cuando venimos de invitación
+        const soloBtn = document.getElementById('soloBtn');
+        const createBtn = document.getElementById('createRoomBtn');
+        const advancedSettings = document.getElementById('advancedSettings');
+        
+        if (soloBtn) soloBtn.style.display = 'none';
+        if (createBtn) createBtn.style.display = 'none';
+        if (advancedSettings) advancedSettings.style.display = 'none';
+      }
       
       setTimeout(() => {
         elements.nicknameInput.focus();
