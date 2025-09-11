@@ -3059,16 +3059,9 @@
         const select = spellSelects[data.i];
         if (el && select) {
           select.value = data.spell;
-          const d = spellData[data.spell];
-          el.dataset.seconds = d.duration;
-          el.dataset.initialDuration = d.duration;
-          el.querySelector('span').textContent = formatTime(d.duration);
-          el.style.backgroundImage = `url(${d.icon})`;
           
-          // Aplicar lógica de smite
-          SpellManager.applySmiteLogic(el, data.spell);
-          
-          updateStaticTimerStyle(el);
+          // Usar SpellManager para cambiar hechizo y resetear si estaba activo
+          SpellManager.changeSpell(el, select, data.spell, formatTime, updateStaticTimerStyle);
         }
       }
 
@@ -3505,23 +3498,16 @@
 
         select.addEventListener('change', () => {
           const spell = select.value;
-          const d = spellData[spell];
-          staticTimer.dataset.seconds = d.duration;
-          staticTimer.dataset.initialDuration = d.duration;
-          staticTimer.querySelector('span').textContent = formatTime(d.duration);
-          staticTimer.style.backgroundImage = `url(${d.icon})`;
           
-          // Aplicar lógica de smite
-          SpellManager.applySmiteLogic(staticTimer, spell);
-          
-          updateStaticTimerStyle(staticTimer);
+          // Usar SpellManager para cambiar hechizo y resetear si estaba activo
+          SpellManager.changeSpell(staticTimer, select, spell, formatTime, updateStaticTimerStyle);
           
           // Actualizar icono de rol si los desplegables están visibles
           const arrow = document.getElementById('toggleArrow');
           if (arrow.textContent.trim() === '⬅️') {
             const roleIcon = document.querySelectorAll('.role-icon')[i];
             const img = roleIcon.querySelector('img');
-            img.src = d.icon;
+            img.src = SpellManager.getSpellData(spell).icon;
           }
           
           sendEvent({
@@ -3967,7 +3953,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.8.2 - 11/9/25 - SpellManager modularized - Code organization improved
+    Lol Spell Tracker v0.8.3 - 11/9/25 - Fixed spell change sync - Timer resets properly when changing spells
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>

@@ -79,5 +79,40 @@ const SpellManager = {
   // Validar si un hechizo existe
   validateSpell(spell) {
     return spell in this.spellData;
+  },
+
+  // Cambiar hechizo y resetear temporizador si estaba activo
+  changeSpell(staticTimer, select, spell, formatTime, updateStaticTimerStyle) {
+    const wasActive = staticTimer.classList.contains('active');
+    const row = staticTimer.parentElement;
+    
+    // Detener temporizador si estaba activo
+    if (staticTimer.interval) {
+      clearInterval(staticTimer.interval);
+      staticTimer.interval = null;
+    }
+    
+    // Remover estados activos
+    staticTimer.classList.remove('active', 'completed');
+    row.classList.remove('secondary-active');
+    staticTimer.style.removeProperty('border-color');
+    staticTimer.style.removeProperty('box-shadow');
+    staticTimer.style.removeProperty('animation');
+    
+    // Aplicar nuevo hechizo
+    const data = this.getSpellData(spell);
+    staticTimer.dataset.seconds = data.duration;
+    staticTimer.dataset.initialDuration = data.duration;
+    staticTimer.style.backgroundImage = `url(${data.icon})`;
+    
+    // Aplicar lógica de smite
+    this.applySmiteLogic(staticTimer, spell);
+    
+    // Actualizar texto solo si no es smite
+    if (!this.isSmite(spell)) {
+      staticTimer.querySelector('span').textContent = formatTime(data.duration);
+    }
+    
+    updateStaticTimerStyle(staticTimer);
   }
 };
