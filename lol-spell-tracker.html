@@ -960,6 +960,19 @@
     const userRole = launchConfig.role || 'join';
     const urlTheme = launchConfig.theme;
     const urlLang = launchConfig.lang;
+    
+    // Manejar apertura como ventana si es necesario
+    if (launchConfig.shouldOpenAsWindow && launchConfig.autoJoin) {
+      const windowSize = localStorage.getItem('window-size') || 'medium';
+      const sizes = { small: [500, 700], medium: [500, 800], large: [600, 1080] };
+      const [width, height] = sizes[windowSize];
+      const opciones = `width=${width},height=${height},resizable=yes,scrollbars=no,titlebar=no,toolbar=no,location=no,status=no`;
+      
+      const newWindow = window.open(window.location.href, `LoLFlashTracker_${Date.now()}`, opciones);
+      if (newWindow) {
+        window.close(); // Cerrar la pestaña actual
+      }
+    }
 
     let isHost = userRole === 'host';
     let isSoloMode = userRole === 'solo';

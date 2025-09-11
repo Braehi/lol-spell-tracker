@@ -2273,7 +2273,8 @@
             diana: false,
             champion: localStorage.getItem('selected-champion'),
             color: localStorage.getItem('user-color'),
-            autoJoin: inviteId
+            autoJoin: inviteId,
+            shouldOpenAsWindow: localStorage.getItem('lol-tracker-mode') !== 'tab'
           };
           
           sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(config));
