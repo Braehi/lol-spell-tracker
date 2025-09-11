@@ -776,6 +776,7 @@
       <div>Personaje guardado: <span id="debugChampion">-</span></div>
       <div>Color guardado: <span id="debugColor">-</span></div>
       <div>Nombre guardado: <span id="debugName">-</span></div>
+      <div>Modo guardado: <span id="debugMode">-</span></div>
     </div>
   </div>
 
@@ -2367,10 +2368,12 @@
       const debugChampion = document.getElementById('debugChampion');
       const debugColor = document.getElementById('debugColor');
       const debugName = document.getElementById('debugName');
+      const debugMode = document.getElementById('debugMode');
       
       if (debugChampion) debugChampion.textContent = localStorage.getItem('selected-champion') || 'Ninguno';
       if (debugColor) debugColor.textContent = localStorage.getItem('user-color') || 'Ninguno';
       if (debugName) debugName.textContent = localStorage.getItem('lol-tracker-nickname') || 'Ninguno';
+      if (debugMode) debugMode.textContent = localStorage.getItem('lol-tracker-mode') === 'tab' ? 'Pestaña' : 'Ventana';
     }
   </script>
 </body>
