@@ -932,7 +932,7 @@
 
   <!-- Botón show/hide en su propia fila, encima de los temporizadores -->
   <div class="toggle-row">
-    <button class="toggle-spells-btn" id="windowModeBtn" onclick="openInWindow()" style="display: none; position: absolute; left: 0;">
+    <button class="toggle-spells-btn" id="windowModeBtn" onclick="openInWindow()" style="display: none; margin-right: auto;">
       🪟 Window
     </button>
     <button class="toggle-spells-btn" id="toggleSpellsBtn">
@@ -976,7 +976,7 @@
       
       const newWindow = window.open(window.location.href, `LoLFlashTracker_${Date.now()}`, opciones);
       if (newWindow) {
-        setTimeout(() => window.close(), 500);
+        window.close();
       }
     };
 
