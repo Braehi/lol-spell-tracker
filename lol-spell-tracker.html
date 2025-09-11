@@ -10,6 +10,7 @@
   <script src="./modules/TimerManager.js"></script>
   <script src="./modules/AudioManager.js"></script>
   <script src="./modules/ConfigManager.js"></script>
+  <script src="./modules/LocalizationManager.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0a;
@@ -1037,62 +1038,10 @@
     }
 
     // ====================== TRADUCCIONES ======================
-    const translations = {
-      en: {
-        waiting: 'Waiting for players...',
-        generating: 'Generating new room...',
-        invalidId: 'Invalid ID (6 characters)',
-        connected: 'Connected to host',
-        connecting: 'Connecting',
-        error: 'Error',
-        idInUse: 'ID in use. Click "New ID".',
-        host: 'You are the host',
-        tutorialTitle: 'Keyboard shortcuts:',
-        keyStart: 'Start timer for role',
-        keyAlt: 'Subtract 10 seconds (only if active and >10s left)',
-        keyShift: 'Subtract 30 seconds (only if active and >30s left)',
-        keyClick: 'Start timer',
-        keyReset: 'Manual reset',
-        reset: 'Reset',
-        hostId: 'Host ID',
-        copy: 'Copy',
-        paste: 'Paste',
-        join: 'Join',
-        players: 'player',
-        players_plural: 'players',
-        noPlayers: 'No players',
-        playingSolo: 'Playing solo',
-        playingSoloHostLost: 'Playing solo (Host lost)'
-      },
-      es: {
-        waiting: 'Esperando jugadores...',
-        generating: 'Generando nueva sala...',
-        invalidId: 'ID inválida (6 caracteres)',
-        connected: 'Conectado al anfitrión',
-        connecting: 'Conectando',
-        error: 'Error',
-        idInUse: 'ID en uso. Pulsa "Nueva ID".',
-        host: 'Eres el host',
-        tutorialTitle: 'Atajos de teclado:',
-        keyStart: 'Inicia el temporizador del rol',
-        keyAlt: 'Resta 10 segundos (solo si está activo y queda +10s)',
-        keyShift: 'Resta 30 segundos (solo si está activo y queda +30s)',
-        keyClick: 'Inicia el temporizador',
-        keyReset: 'Reinicia manualmente',
-        reset: 'Reinicio',
-        hostId: 'ID del Host',
-        copy: 'Copiar',
-        paste: 'Pegar',
-        join: 'Unirse',
-        players: 'jugador',
-        players_plural: 'jugadores',
-        noPlayers: 'Sin jugadores',
-        playingSolo: 'Jugando solo',
-        playingSoloHostLost: 'Jugando solo (Host perdido)'
-      }
-    };
+    const translations = LocalizationManager.translations;
 
     let lang = urlLang || ConfigManager.getLanguage();
+    LocalizationManager.init(lang);
 
     // Cargar tema desde configuración
     const themeToUse = ConfigManager.getTheme(urlTheme);
@@ -1253,7 +1202,7 @@
                 
                 // Actualizar estado de reconexión exitosa
                 const hostName = data.playersList[0][1].nick;
-                const trans = translations[lang];
+                const trans = LocalizationManager.getTranslations();
                 document.getElementById('clientStatus').innerHTML = `
                   <span class="success">✓ ${lang === 'es' ? 'Reconectado a' : 'Reconnected to'} <strong>${escapeHtml(hostName)}</strong></span>
                   <span class="user-nick">${sanitizeNickname(userNickname)}</span>
@@ -1495,9 +1444,8 @@
 
     // ====================== ACTUALIZAR TEXTOS ======================
     function updateTexts() {
-      const trans = translations[lang];
-
-      updatePlayersBar();
+      LocalizationManager.setLanguage(lang);
+      const trans = LocalizationManager.updateTexts({ updatePlayersBar });
 
       if (isHost) {
         const myShortId = document.getElementById('myShortId');
@@ -1552,7 +1500,7 @@
     function setupSyncPanel() {
       const panel = document.getElementById('syncPanel');
       const playersBar = document.getElementById('players-bar');
-      const trans = translations[lang];
+      const trans = LocalizationManager.getTranslations();
 
       if (isSoloMode) {
         panel.style.display = 'none';
@@ -1603,7 +1551,7 @@
 
     // ====================== PEGAR Y COPIAR ID ======================
     async function pasteId() {
-      const trans = translations[lang];
+      const trans = LocalizationManager.getTranslations();
       try {
         const text = await navigator.clipboard.readText();
         const clean = text.trim().toUpperCase();
@@ -1624,7 +1572,7 @@
     }
 
     function copyId() {
-      const trans = translations[lang];
+      const trans = LocalizationManager.getTranslations();
       const input = document.getElementById('myShortId');
       input.select();
       document.execCommand('copy');
@@ -1682,7 +1630,7 @@
             `;
             setTimeout(() => {
               document.getElementById('hostStatus').innerHTML = `
-                <span class="status success">✅ ${translations[lang].host}</span>
+                <span class="status success">✅ ${LocalizationManager.getTranslations().host}</span>
                 <span class="user-nick">${sanitizeNickname(userNickname)}</span>
               `;
             }, 10000);
@@ -1695,7 +1643,7 @@
             });
           } else {
             document.getElementById('hostStatus').innerHTML = `
-              <span class="status success">✅ ${translations[lang].host}</span>
+              <span class="status success">✅ ${LocalizationManager.getTranslations().host}</span>
               <span class="user-nick">${sanitizeNickname(userNickname)}</span>
             `;
           }
@@ -1708,7 +1656,7 @@
       });
 
       peer.on('error', (err) => {
-        const trans = translations[lang];
+        const trans = LocalizationManager.getTranslations();
         if (err.type === 'unavailable-id') {
           document.getElementById('hostStatus').innerHTML = `
             <span class="error">❌ ${trans.idInUse}</span>
@@ -1969,7 +1917,7 @@
 
     // ====================== CONECTAR AL HOST ======================
     function connectToHost() {
-      const trans = translations[lang];
+      const trans = LocalizationManager.getTranslations();
       const hostIdInput = document.getElementById('hostIdInput');
       const hostShortId = hostIdInput.value.trim().toUpperCase();
 
@@ -2040,7 +1988,7 @@
             } else {
               connectedPlayers.set(data.from, { nick: hostNickname, champion: data.champion, color: data.color, lastPong: Date.now() });
             }
-            const trans = translations[lang];
+            const trans = LocalizationManager.getTranslations();
             document.getElementById('clientStatus').innerHTML = `
               <span>✅ ${trans.connected} <strong>${escapeHtml(hostNickname)}</strong></span>
               <span class="user-nick">${sanitizeNickname(userNickname)}</span>
@@ -2152,7 +2100,7 @@
             applyFullState(data.state);
           } else if (data.a === 'newHostAnnouncement') {
             hostNickname = sanitizeNickname(data.nick);
-            const trans = translations[lang];
+            const trans = LocalizationManager.getTranslations();
             document.getElementById('clientStatus').innerHTML = `
               <span>✅ ${trans.connected} <strong>${escapeHtml(hostNickname)}</strong></span>
               <span class="user-nick">${sanitizeNickname(userNickname)}</span>
@@ -2248,7 +2196,7 @@
         // 1.2. Mensaje de error para ID incorrecta
         // Error se muestra en clientStatus
         
-        const trans = translations[lang];
+        const trans = LocalizationManager.getTranslations();
         document.getElementById('clientStatus').innerHTML = `
           <span class="error">❌ ${trans.error}: ${err.type}</span>
           <span class="user-nick">${sanitizeNickname(userNickname)}</span>
@@ -2441,7 +2389,7 @@
         const hostName = data.playersList[0][1].nick; // El host siempre es el primero
         
         // Actualizar estado en lugar de toast
-        const trans = translations[lang];
+        const trans = LocalizationManager.getTranslations();
         document.getElementById('clientStatus').innerHTML = `
           <span class="success">✅ ${trans.connected} <strong>${escapeHtml(hostName)}</strong></span>
           <span class="user-nick">${sanitizeNickname(userNickname)}</span>
@@ -2827,7 +2775,7 @@
 
     // ====================== JUGADORES CONECTADOS ======================
     function updatePlayersBar() {
-      const trans = translations[lang];
+      const trans = LocalizationManager.getTranslations();
       const playerCountEl = document.getElementById('playerCount');
       const secondaryHostInfo = document.getElementById('secondary-host-info');
       
@@ -3047,7 +2995,7 @@
         const resetBtn = document.createElement('button');
         resetBtn.className = 'reset-btn';
         resetBtn.innerHTML = '×';
-        resetBtn.title = translations[lang].reset;
+        resetBtn.title = LocalizationManager.getTranslations().reset;
         resetBtn.onclick = (e) => {
           e.stopPropagation();
           resetTimer(timerBoxes[i], true);
@@ -3069,7 +3017,7 @@
 
         const message = document.createElement('div');
         message.className = 'reset-message';
-        message.textContent = translations[lang].reset;
+        message.textContent = LocalizationManager.getTranslations().reset;
         box.appendChild(message);
 
         const notification = document.createElement('div');
@@ -3446,7 +3394,7 @@
             
             if (data.a === 'hostInfo') {
               hostNickname = sanitizeNickname(data.nick);
-              const trans = translations[lang];
+              const trans = LocalizationManager.getTranslations();
               document.getElementById('clientStatus').innerHTML = `
                 <span>✅ ${trans.connected} <strong>${escapeHtml(hostNickname)}</strong></span>
                 <span class="user-nick">${sanitizeNickname(userNickname)}</span>
@@ -3597,7 +3545,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.8.6 - 11/9/25 - ConfigManager modularized - Fixed launcher settings and no-save mode
+    Lol Spell Tracker v0.8.7 - 11/9/25 - LocalizationManager modularized - Translations centralized, 52 lines reduced
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
