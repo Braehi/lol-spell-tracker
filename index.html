@@ -2253,10 +2253,65 @@
         const soloBtn = document.getElementById('soloBtn');
         const createBtn = document.getElementById('createRoomBtn');
         const advancedSettings = document.getElementById('advancedSettings');
+        const joinBtn = document.getElementById('joinRoomBtn');
         
         if (soloBtn) soloBtn.style.display = 'none';
         if (createBtn) createBtn.style.display = 'none';
         if (advancedSettings) advancedSettings.style.display = 'none';
+        if (joinBtn) joinBtn.style.display = 'none';
+        
+        // Añadir texto de invitación y botón especial
+        const guestBox = document.querySelector('.guest-box');
+        if (guestBox) {
+          const inviteText = document.createElement('div');
+          inviteText.style.cssText = 'text-align: center; font-size: 0.8rem; color: var(--text-muted); margin: 8px 0;';
+          inviteText.textContent = `Invitation: ${inviteId}`;
+          
+          const joinInviteBtn = document.createElement('button');
+          joinInviteBtn.className = 'action-button';
+          joinInviteBtn.style.cssText = 'background: linear-gradient(45deg, #e91e63, #f06292); color: white; border: none; border-radius: var(--radius); padding: 12px 24px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all 0.3s ease; margin-top: 8px; width: 100%; box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);';
+          joinInviteBtn.innerHTML = '<span>💌</span> <span>Join Invite</span>';
+          
+          joinInviteBtn.addEventListener('click', () => {
+            // Usar protocolo de autoconexion
+            const config = {
+              nick: elements.nicknameInput.value.trim() || 'Player',
+              role: 'join',
+              theme: document.body.classList.contains('light-theme') ? 'light' : 'dark',
+              lang: currentLang,
+              diana: dianaEffectsActive,
+              champion: document.getElementById('championInput').value.trim() || null,
+              color: getUserColor(),
+              autoJoin: inviteId
+            };
+            
+            sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(config));
+            
+            const url = 'lol-spell-tracker.html';
+            if (isTabMode) {
+              window.open(url, '_blank');
+            } else {
+              abrirEnVentana(url);
+            }
+          });
+          
+          guestBox.appendChild(inviteText);
+          guestBox.appendChild(joinInviteBtn);
+        }
+      }
+      
+      function getUserColor() {
+        if (dianaEffectsActive) {
+          return 'linear-gradient(45deg, #ffffff, #87ceeb)';
+        }
+        const colorSelect = document.getElementById('userColor');
+        const colorPicker = document.getElementById('colorPicker');
+        if (colorSelect.value && colorSelect.value !== 'custom') {
+          return colorSelect.value;
+        } else if (colorSelect.value === 'custom') {
+          return colorPicker.value;
+        }
+        return null;
       }
       
       setTimeout(() => {
