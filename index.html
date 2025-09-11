@@ -2173,11 +2173,10 @@
     
     // Detección de invitación
     function checkInviteUrl() {
-      const path = window.location.pathname;
-      const match = path.match(/\/i\/([A-Z0-9]{6})$/);
+      const urlParams = new URLSearchParams(window.location.search);
+      const inviteCode = urlParams.get('invite');
       
-      if (match) {
-        const inviteCode = match[1];
+      if (inviteCode) {
         console.log('Invitación detectada:', inviteCode);
         
         // Verificar si hay datos guardados

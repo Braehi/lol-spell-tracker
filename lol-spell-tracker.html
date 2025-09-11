@@ -1588,7 +1588,7 @@
       }
       
       const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
-      const inviteUrl = `${baseUrl}/i/${shortId}`;
+      const inviteUrl = `${baseUrl}/?invite=${shortId}`;
       
       navigator.clipboard.writeText(inviteUrl).then(() => {
         const btn = document.getElementById('inviteBtn');
