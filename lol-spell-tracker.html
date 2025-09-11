@@ -3007,24 +3007,27 @@
       
       if (autoJoinCode) {
         console.log('Auto-joining room:', autoJoinCode);
-        isHost = false;
         
+        // Mostrar mensaje "Joining room..."
+        const clientStatus = document.getElementById('clientStatus');
+        if (clientStatus) {
+          clientStatus.innerHTML = '<span class="info">🔄 Joining room...</span>';
+        }
+        
+        // Después de 3 segundos, aplicar ID y hacer click en Join
         setTimeout(() => {
           const roomInput = document.getElementById('roomId');
-          if (roomInput) {
+          const joinBtn = document.querySelector('#syncPanel button[onclick="connectToHost()"]');
+          
+          if (roomInput && joinBtn) {
             roomInput.value = autoJoinCode;
-            console.log('Room ID set to:', autoJoinCode);
+            console.log('Room ID aplicado:', autoJoinCode);
             
-            // Asegurar que connectToHost existe antes de llamarlo
-            if (typeof connectToHost === 'function') {
-              console.log('Calling connectToHost...');
-              connectToHost();
-            } else {
-              console.log('connectToHost not available yet, retrying...');
-              setTimeout(() => connectToHost(), 1000);
-            }
+            // Simular click en Join
+            joinBtn.click();
+            console.log('Join button clicked');
           }
-        }, 1500);
+        }, 3000);
         
         return true;
       }
@@ -3032,6 +3035,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      checkAutoJoin();
       // Configuración inicial
       ConfigManager.setupSwitches(lang, themeToUse);
       
@@ -3542,9 +3546,6 @@
       
       updatePlayersBar();
     }
-    
-    // Ejecutar auto-join después de que todo esté inicializado
-    checkAutoJoin();
     });
 
     // ====================== FUNCIÓN SHOWTOAST ======================
