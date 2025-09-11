@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <script src="./modules/SpellManager.js"></script>
   <script src="./modules/TimerManager.js"></script>
+  <script src="./modules/AudioManager.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0a;
@@ -1474,33 +1475,13 @@
     }
 
     // ====================== SONIDO ======================
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     function playPingSound() {
-      if (audioContext.state === 'suspended') return;
-      if (!soundEnabled()) return;
-
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.type = 'square';
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.15);
+      AudioManager.playPingSound(soundSwitch);
     }
 
     function soundEnabled() {
-      return soundSwitch.checked;
+      return AudioManager.soundEnabled(soundSwitch);
     }
-
-    document.addEventListener('click', () => {
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-    }, { once: true });
 
     // ====================== CAMBIO DE IDIOMA ======================
     const langSwitch = document.getElementById('langSwitch');
@@ -3329,6 +3310,10 @@
       
       updateTexts();
       
+      // Inicializar AudioManager
+      AudioManager.init();
+      AudioManager.setupAutoResume();
+      
       // Funciones auxiliares
       function promoteToHost() {
         if (isHost) return;
@@ -3626,7 +3611,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.8.4 - 11/9/25 - TimerManager modularized - 341 lines reduced, better code organization
+    Lol Spell Tracker v0.8.5 - 11/9/25 - AudioManager modularized - Audio functionality centralized
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
