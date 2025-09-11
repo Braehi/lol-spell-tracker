@@ -3002,8 +3002,10 @@
     // ====================== INICIO ======================
     // Auto-join desde invitación
     function checkAutoJoin() {
+      console.log('Checking URL:', window.location.href);
       const urlParams = new URLSearchParams(window.location.search);
       const autoJoinCode = urlParams.get('autoJoin');
+      console.log('AutoJoin code found:', autoJoinCode);
       
       if (autoJoinCode) {
         console.log('Auto-joining room:', autoJoinCode);
@@ -3016,8 +3018,12 @@
         
         // Después de 3 segundos, aplicar ID y hacer click en Join
         setTimeout(() => {
+          console.log('Timeout ejecutado, buscando elementos...');
           const roomInput = document.getElementById('roomId');
           const joinBtn = document.querySelector('#syncPanel button[onclick="connectToHost()"]');
+          
+          console.log('roomInput:', roomInput);
+          console.log('joinBtn:', joinBtn);
           
           if (roomInput && joinBtn) {
             roomInput.value = autoJoinCode;
@@ -3026,6 +3032,8 @@
             // Simular click en Join
             joinBtn.click();
             console.log('Join button clicked');
+          } else {
+            console.log('Elementos no encontrados');
           }
         }, 3000);
         
