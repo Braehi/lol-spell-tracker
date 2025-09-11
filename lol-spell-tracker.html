@@ -976,6 +976,15 @@
       
       const newWindow = window.open(window.location.href, `LoLFlashTracker_${Date.now()}`, opciones);
       if (newWindow) {
+        // Cerrar todas las conexiones
+        if (peer) peer.destroy();
+        if (myConnection) myConnection.close();
+        connections.forEach(conn => conn.close());
+        peerConnections.forEach(conn => conn.close());
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        if (pingInterval) clearInterval(pingInterval);
+        if (cleanupInterval) clearInterval(cleanupInterval);
+        
         document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-size:1.2rem;color:#aaa;">✅ Opened in window. You can close this tab.</div>';
       }
     };
