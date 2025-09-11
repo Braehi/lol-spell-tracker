@@ -3010,9 +3010,21 @@
         isHost = false;
         
         setTimeout(() => {
-          document.getElementById('roomId').value = autoJoinCode;
-          connectToHost();
-        }, 500);
+          const roomInput = document.getElementById('roomId');
+          if (roomInput) {
+            roomInput.value = autoJoinCode;
+            console.log('Room ID set to:', autoJoinCode);
+            
+            // Asegurar que connectToHost existe antes de llamarlo
+            if (typeof connectToHost === 'function') {
+              console.log('Calling connectToHost...');
+              connectToHost();
+            } else {
+              console.log('connectToHost not available yet, retrying...');
+              setTimeout(() => connectToHost(), 1000);
+            }
+          }
+        }, 1500);
         
         return true;
       }
