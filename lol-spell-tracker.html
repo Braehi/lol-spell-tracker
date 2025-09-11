@@ -3000,44 +3000,20 @@
     // ====================== INICIO ======================
     // Auto-join desde invitación
     function checkAutoJoin() {
-      console.log('Checking URL:', window.location.href);
-      const urlParams = new URLSearchParams(window.location.search);
-      const autoJoinCode = urlParams.get('autoJoin');
-      console.log('AutoJoin code found:', autoJoinCode);
+      const autoJoinCode = launchConfig.autoJoin;
       
       if (autoJoinCode) {
         console.log('Auto-joining room:', autoJoinCode);
         
-        // Mostrar mensaje "Joining room..." después de que el DOM esté listo
+        // Esperar a que el panel esté configurado
         setTimeout(() => {
-          const clientStatus = document.getElementById('clientStatus');
-          console.log('clientStatus element:', clientStatus);
-          if (clientStatus) {
-            clientStatus.innerHTML = '<span class="info">🔄 Joining room...</span>';
-            console.log('Mensaje "Joining room..." mostrado');
+          const hostIdInput = document.getElementById('hostIdInput');
+          if (hostIdInput) {
+            hostIdInput.value = autoJoinCode;
+            // Conectar automáticamente
+            connectToHost();
           }
-        }, 100);
-        
-        // Después de 3 segundos, aplicar ID y hacer click en Join
-        setTimeout(() => {
-          console.log('Timeout ejecutado, buscando elementos...');
-          const roomInput = document.getElementById('hostIdInput');
-          const joinBtn = document.querySelector('#syncPanel button[onclick="connectToHost()"]');
-          
-          console.log('roomInput:', roomInput);
-          console.log('joinBtn:', joinBtn);
-          
-          if (roomInput && joinBtn) {
-            roomInput.value = autoJoinCode;
-            console.log('Room ID aplicado:', autoJoinCode);
-            
-            // Simular click en Join
-            joinBtn.click();
-            console.log('Join button clicked');
-          } else {
-            console.log('Elementos no encontrados');
-          }
-        }, 3000);
+        }, 1000);
         
         return true;
       }
