@@ -2264,7 +2264,7 @@
                            localStorage.getItem('user-color');
         
         if (hasUserData) {
-          // Auto-unirse directamente
+          // Auto-unirse directamente respetando el modo guardado
           const config = {
             nick: localStorage.getItem('lol-tracker-nickname') || 'Player',
             role: 'join',
@@ -2277,7 +2277,18 @@
           };
           
           sessionStorage.setItem('lol-tracker-launch-config', JSON.stringify(config));
-          window.location.href = 'lol-spell-tracker.html';
+          
+          const savedMode = localStorage.getItem('lol-tracker-mode');
+          if (savedMode === 'tab') {
+            window.open('lol-spell-tracker.html', '_blank');
+          } else {
+            // Modo ventana
+            const windowSize = localStorage.getItem('window-size') || 'medium';
+            const sizes = { small: '500,700', medium: '500,800', large: '600,1080' };
+            const [width, height] = sizes[windowSize].split(',');
+            const opciones = `width=${width},height=${height},resizable=yes,scrollbars=no,titlebar=no,toolbar=no,location=no,status=no`;
+            window.open('lol-spell-tracker.html', `LoLFlashTracker_${Date.now()}`, opciones);
+          }
           return;
         }
         
