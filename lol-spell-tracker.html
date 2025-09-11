@@ -6,6 +6,7 @@
   <title>LoL Spell Tracker</title>
   <link rel="icon" href="./images/Flash.png" type="image/png" />
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script src="./modules/SpellManager.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0a;
@@ -1308,27 +1309,12 @@
     let cleanupInterval = null;
 
     // Spells disponibles
-    const spellData = {
-      heal: { duration: 240, icon: './images/SummonerHeal.png' },
-      teleport: { duration: 300, icon: './images/SummonerTeleport.png' },
-      ignite: { duration: 180, icon: './images/SummonerDot.png' },
-      exhaust: { duration: 210, icon: './images/SummonerExhaust.png' },
-      cleanse: { duration: 210, icon: './images/SummonerBoost.png' },
-      ghost: { duration: 180, icon: './images/SummonerHaste.png' },
-      barrier: { duration: 210, icon: './images/SummonerBarrier.png' },
-      smite: { duration: 90, icon: './images/SummonerSmite.png' }
-    };
+    const spellData = SpellManager.spellData;
 
-    const roles = ['Top', 'Jungle', 'Middle', 'Bottom', 'Support'];
-    const icons = [
-      "./images/Top_icon.png",
-      "./images/Jungle_icon.png",
-      "./images/Middle_icon.png",
-      "./images/Bottom_icon.png",
-      "./images/Support_icon.png"
-    ];
-    const defaultSpells = ['teleport', 'smite', 'teleport', 'barrier', 'heal'];
-    const keyMap = { '1': 0, '2': 1, '3': 2, '4': 3, '5': 4 };
+    const roles = SpellManager.roles;
+    const icons = SpellManager.icons;
+    const defaultSpells = SpellManager.defaultSpells;
+    const keyMap = SpellManager.keyMap;
     let timerBoxes = [];
     let staticTimers = [];
     let spellSelects = [];
@@ -1583,13 +1569,8 @@
       el.dataset.initialDuration = duration;
       timeSpan.textContent = formatTime(duration);
       
-      // Aplicar lógica especial para smite
-      if (spell === 'smite') {
-        el.classList.add('smite-reference');
-        timeSpan.textContent = '';
-      } else {
-        el.classList.remove('smite-reference');
-      }
+      // Aplicar lógica de smite
+      SpellManager.applySmiteLogic(el, spell);
 
       el.classList.remove('active', 'completed');
       row.classList.remove('secondary-active');
@@ -1767,17 +1748,11 @@
         const data = spellData[defaultSpell];
         el.style.backgroundImage = `url(${data.icon})`;
         
-        // Aplicar lógica especial para smite
-        if (defaultSpell === 'smite') {
-          el.classList.add('smite-reference');
-          el.dataset.seconds = 0;
-          el.dataset.initialDuration = 0;
-          timeSpan.textContent = '';
-        } else {
-          el.classList.remove('smite-reference');
+        // Aplicar lógica de smite
+        SpellManager.applySmiteLogic(el, defaultSpell);
+        if (!SpellManager.isSmite(defaultSpell)) {
           el.dataset.seconds = data.duration;
           el.dataset.initialDuration = data.duration;
-          timeSpan.textContent = formatTime(data.duration);
         }
 
         el.classList.remove('active', 'completed');
@@ -2739,7 +2714,7 @@
           return {
             i,
             active: !!el.interval,
-            seconds: spell === 'smite' ? 0 : (parseInt(el.dataset.seconds) || parseInt(el.dataset.initialDuration)),
+            seconds: SpellManager.isSmite(spell) ? 0 : (parseInt(el.dataset.seconds) || parseInt(el.dataset.initialDuration)),
             spell: spell,
             completed: el.classList.contains('completed'),
             startTime: el.startTime || null
@@ -3090,13 +3065,8 @@
           el.querySelector('span').textContent = formatTime(d.duration);
           el.style.backgroundImage = `url(${d.icon})`;
           
-          // Aplicar clase especial para smite
-          if (data.spell === 'smite') {
-            el.classList.add('smite-reference');
-            el.querySelector('span').textContent = '';
-          } else {
-            el.classList.remove('smite-reference');
-          }
+          // Aplicar lógica de smite
+          SpellManager.applySmiteLogic(el, data.spell);
           
           updateStaticTimerStyle(el);
         }
@@ -3184,19 +3154,14 @@
           el.style.backgroundImage = `url(${spellInfo.icon})`;
           el.dataset.initialDuration = spellInfo.duration;
           
-          // Aplicar clase especial para smite
-          if (secData.spell === 'smite') {
-            el.classList.add('smite-reference');
-            el.querySelector('span').textContent = '';
-          } else {
-            el.classList.remove('smite-reference');
-          }
+          // Aplicar lógica de smite
+          SpellManager.applySmiteLogic(el, secData.spell);
         }
 
         if (secData.completed) {
           el.classList.add('completed');
           el.dataset.seconds = parseInt(el.dataset.initialDuration);
-          if (secData.spell !== 'smite') {
+          if (!SpellManager.isSmite(secData.spell)) {
             timeSpan.textContent = formatTime(el.dataset.seconds);
           }
         } else if (secData.active) {
@@ -3204,14 +3169,14 @@
           if (secData.startTime) {
             el.startTime = secData.startTime;
           }
-          if (secData.spell !== 'smite') {
+          if (!SpellManager.isSmite(secData.spell)) {
             timeSpan.textContent = formatTime(secData.seconds);
           }
           startStaticTimer(el);
           row.classList.add('secondary-active');
         } else {
           el.dataset.seconds = secData.seconds;
-          if (secData.spell !== 'smite') {
+          if (!SpellManager.isSmite(secData.spell)) {
             timeSpan.textContent = formatTime(secData.seconds);
           }
         }
@@ -3518,10 +3483,10 @@
         const select = document.createElement('select');
         select.className = 'spell-select';
 
-        Object.keys(spellData).forEach(spell => {
+        SpellManager.createSpellOptions().forEach(spellOption => {
           const option = document.createElement('option');
-          option.value = spell;
-          option.textContent = spell.charAt(0).toUpperCase() + spell.slice(1);
+          option.value = spellOption.value;
+          option.textContent = spellOption.text;
           select.appendChild(option);
         });
 
@@ -3533,10 +3498,9 @@
         staticTimer.querySelector('span').textContent = formatTime(data.duration);
         staticTimer.style.backgroundImage = `url(${data.icon})`;
         
-        // Aplicar clase especial si es smite por defecto
-        if (defaultSpell === 'smite') {
-          staticTimer.classList.add('smite-reference');
-          staticTimer.querySelector('span').textContent = '';
+        // Aplicar lógica de smite por defecto
+        if (SpellManager.isSmite(defaultSpell)) {
+          SpellManager.applySmiteLogic(staticTimer, defaultSpell);
         }
 
         select.addEventListener('change', () => {
@@ -3547,13 +3511,8 @@
           staticTimer.querySelector('span').textContent = formatTime(d.duration);
           staticTimer.style.backgroundImage = `url(${d.icon})`;
           
-          // Aplicar clase especial para smite
-          if (spell === 'smite') {
-            staticTimer.classList.add('smite-reference');
-            staticTimer.querySelector('span').textContent = '';
-          } else {
-            staticTimer.classList.remove('smite-reference');
-          }
+          // Aplicar lógica de smite
+          SpellManager.applySmiteLogic(staticTimer, spell);
           
           updateStaticTimerStyle(staticTimer);
           
@@ -3600,7 +3559,7 @@
           
           // Smite no es clickeable - solo referencia visual
           const currentSpell = select.value;
-          if (currentSpell === 'smite') return;
+          if (SpellManager.isSmite(currentSpell)) return;
           
           startStaticTimer(staticTimer);
           row.classList.add('secondary-active');
@@ -4008,7 +3967,7 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.8.0 - 10/9/25 - Backup system fully implemented - MAJOR UPDATE
+    Lol Spell Tracker v0.8.2 - 11/9/25 - SpellManager modularized - Code organization improved
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
