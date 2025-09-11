@@ -933,11 +933,11 @@
   <!-- Botón show/hide en su propia fila, encima de los temporizadores -->
   <div class="toggle-row">
     <button class="toggle-spells-btn" id="windowModeBtn" onclick="openInWindow()" style="display: none; margin-right: auto; margin-left: 2cm;">
-      ↗️ Open in a Window
+      ↗️ <span id="windowModeText">Open in a Window</span>
     </button>
     <button class="toggle-spells-btn" id="toggleSpellsBtn">
       <span id="toggleArrow">➡️</span>
-      <span id="toggleText">show</span>
+      <span id="toggleText">Change</span>
     </button>
   </div>
 
@@ -1358,7 +1358,7 @@
           img.src = icons[i];
         });
         arrow.textContent = '➡️';
-        text.textContent = 'show';
+        text.textContent = LocalizationManager.t('config');
       } else {
         spellSelects.forEach(el => el.style.display = 'block');
         staticTimers.forEach(el => el.style.display = 'none');
@@ -1371,7 +1371,7 @@
           img.src = spellData[spell].icon;
         });
         arrow.textContent = '⬅️';
-        text.textContent = 'hide';
+        text.textContent = LocalizationManager.t('done');
 
         autoHideTimeout = setTimeout(() => {
           spellSelects.forEach(el => el.style.display = 'none');
@@ -1384,7 +1384,7 @@
             img.src = icons[i];
           });
           arrow.textContent = '➡️';
-          text.textContent = 'show';
+          text.textContent = LocalizationManager.t('config');
           autoHideTimeout = null;
         }, 30000);
       }
@@ -1520,6 +1520,16 @@
       document.querySelectorAll('.reset-message').forEach(el => {
         el.textContent = trans.reset;
       });
+
+      // Actualizar botones
+      const toggleText = document.getElementById('toggleText');
+      const windowModeText = document.getElementById('windowModeText');
+      if (toggleText && toggleText.textContent !== trans.done) {
+        toggleText.textContent = trans.config;
+      }
+      if (windowModeText) {
+        windowModeText.textContent = trans.openWindow;
+      }
     }
 
     // ====================== CONFIGURAR PANEL DE SINCRONIZACIÓN ======================
