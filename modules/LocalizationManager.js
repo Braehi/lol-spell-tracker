@@ -33,7 +33,20 @@ const LocalizationManager = {
       reconnectedTo: 'Reconnected to',
       connectedTo: 'Connected to',
       startGame: 'Start Game',
-      resetAll: 'Reset All'
+      resetAll: 'Reset All',
+      roomClosed: 'This room is Closed.',
+      roomSettings: 'Room Settings',
+      roomStatus: 'Room Status',
+      open: 'Public',
+      closed: 'Private',
+      maxPlayers: 'Max Players',
+      roomFull: 'This room is Full.',
+      currentPlayers: 'Current Players',
+      guest: 'Guest',
+      mod: 'Mod',
+      host: 'Host',
+      kick: 'Kick',
+      kicked: 'You have been kicked from the room.'
     },
     es: {
       waiting: 'Esperando jugadores...',
@@ -67,7 +80,20 @@ const LocalizationManager = {
       reconnectedTo: 'Reconectado a',
       connectedTo: 'Conectado a',
       startGame: 'Iniciar Partida',
-      resetAll: 'Reiniciar Todo'
+      resetAll: 'Reiniciar Todo',
+      roomClosed: 'Esta sala está Cerrada.',
+      roomSettings: 'Configuración de Sala',
+      roomStatus: 'Estado de Sala',
+      open: 'Pública',
+      closed: 'Privada',
+      maxPlayers: 'Jugadores Máximos',
+      roomFull: 'Esta sala está Llena.',
+      currentPlayers: 'Jugadores Actuales',
+      guest: 'Invitado',
+      mod: 'Moderador',
+      host: 'Anfitrión',
+      kick: 'Expulsar',
+      kicked: 'Has sido expulsado de la sala.'
     }
   },
 

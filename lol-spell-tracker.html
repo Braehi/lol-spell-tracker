@@ -11,6 +11,7 @@
   <script src="./modules/AudioManager.js"></script>
   <script src="./modules/ConfigManager.js"></script>
   <script src="./modules/LocalizationManager.js"></script>
+  <script src="./modules/RoomManager.js"></script>
   <style>
     :root {
       --bg-primary: #0a0a0a;
@@ -747,7 +748,7 @@
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 10px 14px;
+      padding: 0;
       font-size: 0.78rem;
       color: var(--text);
       line-height: 1.5;
@@ -756,6 +757,11 @@
       overflow: hidden;
       opacity: 0;
       transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+    }
+    .tutorial-box.show {
+      max-height: 200px;
+      opacity: 1;
+      padding: 10px 14px;
     }
     .tutorial-box.show {
       max-height: 200px;
@@ -772,7 +778,7 @@
       font-size: 0.8rem;
       cursor: pointer;
       transition: all 0.2s ease;
-      margin-bottom: 8px;
+      margin-bottom: 2px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1145,15 +1151,28 @@
         if (attempt > maxAttempts) {
           // 6.3.6. Mensaje final de conexión perdida
           isReconnecting = false;
+          // Verificar si ya se mostró mensaje de sala cerrada, llena o expulsado
+          const clientStatus = document.getElementById('clientStatus');
+          if (clientStatus && (clientStatus.innerHTML.includes('Room is closed') || clientStatus.innerHTML.includes('Closed') || clientStatus.innerHTML.includes('Cerrada') || clientStatus.innerHTML.includes('Full') || clientStatus.innerHTML.includes('Llena') || clientStatus.innerHTML.includes('kicked') || clientStatus.innerHTML.includes('expulsado') || window.wasKicked)) {
+            // No sobrescribir mensaje de sala cerrada, llena o expulsado
+            return;
+          }
           // Actualizar estado de conexión perdida
           document.getElementById('clientStatus').innerHTML = `
-            <span class="error">❌ ${LocalizationManager.t('connectionLost')}</span>
+            <span class="error">❌ ${lang === 'es' ? 'Conexión perdida' : 'Connection lost'}</span>
             <span class="user-nick">${sanitizeNickname(userNickname)}</span>
           `;
           return;
         }
         
-        // 6.3. Mostrar mensaje de reconexión
+        // 6.3. Mostrar mensaje de reconexión solo si no fue expulsado
+        const clientStatus = document.getElementById('clientStatus');
+        if (clientStatus && (clientStatus.innerHTML.includes('kicked') || clientStatus.innerHTML.includes('expulsado') || window.wasKicked)) {
+          // No sobrescribir mensaje de expulsión
+          isReconnecting = false;
+          return;
+        }
+        
         const message = attempt === 1 ? 
           (lang === 'es' ? '🔄 Reconectando...' : '🔄 Reconnecting...') :
           (lang === 'es' ? `🔄 (${attempt})Reconectando...` : `🔄 (${attempt})Reconnecting...`);
@@ -1480,8 +1499,14 @@
 
         const hostStatus = document.getElementById('hostStatus');
         if (hostStatus) {
+          const MAX_GUESTS = RoomManager.getMaxGuests();
+          const currentGuests = connections.length;
+          const statusText = currentGuests >= MAX_GUESTS ? 
+            `🔒 ${trans.roomFull || 'Room Full'}` : 
+            `✅ ${trans.host}`;
+          
           hostStatus.innerHTML = `
-            <span class="status success">✅ ${trans.host}</span>
+            <span class="status ${currentGuests >= MAX_GUESTS ? 'warning' : 'success'}">${statusText}</span>
             <span class="user-nick">${userNickname}</span>
           `;
         }
@@ -1578,7 +1603,7 @@
           <div class="input-group">
             <input type="text" id="myShortId" readonly value="${trans.generating}" style="font-size: 1rem; text-align: center;">
             <button onclick="copyId()">${trans.copy}</button>
-            <button id="inviteBtn" onclick="generateInviteLink()" style="background: #4ecdc4; margin-left: 8px; transition: all 0.3s ease;" onmouseenter="this.style.background='#45b7d1'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='#4ecdc4'; this.style.transform='scale(1)';" onmousedown="this.style.transform='scale(0.95)';" onmouseup="this.style.transform='scale(1.05)';">📤 Invite</button>
+            <button id="inviteBtn" onclick="generateInviteLink()" style="background: var(--accent-primary); margin-left: 8px; transition: all 0.3s ease;" onmouseenter="this.style.background='var(--accent-secondary)'; this.style.transform='scale(1.05)';" onmouseleave="this.style.background='var(--accent-primary)'; this.style.transform='scale(1)';" onmousedown="this.style.transform='scale(0.95)';" onmouseup="this.style.transform='scale(1.05)';">Invite</button>
           </div>
           <div class="status" id="hostStatus">
             <span>🟢 ${trans.waiting}</span>
@@ -1642,6 +1667,9 @@
         return;
       }
       
+      // Cambiar sala a privada al crear invitación
+      RoomManager.toggleRoomStatus(false);
+      
       const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
       const inviteUrl = `${baseUrl}/?invite=${shortId}`;
       
@@ -1649,11 +1677,11 @@
         const btn = document.getElementById('inviteBtn');
         const originalText = btn.innerHTML;
         btn.innerHTML = '✓ Copied!';
-        btn.style.background = '#00b894';
+        btn.style.background = 'var(--success)';
         
         setTimeout(() => {
           btn.innerHTML = originalText;
-          btn.style.background = '#4ecdc4';
+          btn.style.background = 'var(--accent-primary)';
         }, 2000);
         
         showToast('Invite link copied to clipboard!', 'success', 2000);
@@ -1762,8 +1790,15 @@
 
       peer.on('connection', (conn) => {
         if (isHost) {
-          if (connections.length >= 7) {
-            conn.close();
+          const MAX_GUESTS = RoomManager.getMaxGuests();
+          const isInvitation = launchConfig.autoJoin === shortId;
+          if (connections.length >= MAX_GUESTS || !RoomManager.canJoinRoom(isInvitation)) {
+            // Configurar listener temporal para enviar mensaje y cerrar
+            conn.on('open', () => {
+              const reason = !RoomManager.canJoinRoom() ? 'roomClosed' : 'roomFull';
+              conn.send({ a: reason, maxPlayers: RoomManager.maxPlayers });
+              setTimeout(() => conn.close(), 200);
+            });
             return;
           }
           setupConnection(conn);
@@ -1831,6 +1866,7 @@
             }
             
             updatePlayersBar();
+            RoomManager.updatePlayersList();
             
             // PASO 3: Enviar información actualizada
             const playersList = Array.from(connectedPlayers.entries())
@@ -1849,7 +1885,8 @@
               playersList: playersList,
               hostBackupId: myBackupId,
               secondaryHostId: secondaryHostId,
-              secondaryHostBackupId: secondaryHostBackupId
+              secondaryHostBackupId: secondaryHostBackupId,
+              maxPlayers: RoomManager.maxPlayers
             };
             
             // Enviar a todos los invitados conectados
@@ -1922,9 +1959,53 @@
           } else if (data.a === 'requestBackupId') {
             // Enviar mi ID de respaldo cuando el host la solicite
             conn.send({ a: 'secondaryHostBackupId', id: myBackupId, from: myPeerId });
+          } else if (data.a === 'roomFull') {
+            // Sala llena - mostrar mensaje y cerrar
+            const trans = LocalizationManager.getTranslations();
+            document.getElementById('clientStatus').innerHTML = `
+              <span class="error">❌ ${LocalizationManager.t('roomFull')}</span>
+              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
+            `;
+          } else if (data.a === 'roomClosed') {
+            // Sala cerrada - mostrar mensaje
+            const trans = LocalizationManager.getTranslations();
+            document.getElementById('clientStatus').innerHTML = `
+              <span class="error">🔒 ${LocalizationManager.t('roomClosed')}</span>
+              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
+            `;
+          } else if (data.a === 'kicked') {
+            console.log('Received kick message, processing expulsion');
+            // Expulsado - limpiar datos y cerrar conexión
+            isReconnecting = false;
+            secondaryHostId = null;
+            secondaryHostBackupId = null;
+            myBackupId = null;
+            hostBackupId = null;
+            
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            
+            const trans = LocalizationManager.getTranslations();
+            document.getElementById('clientStatus').innerHTML = `
+              <span class="error">❌ ${LocalizationManager.t('kicked')}</span>
+              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
+            `;
+            
+            console.log('Closing connection after kick');
+            // Usuario cierra su propia conexión
+            myConnection.removeAllListeners('close');
+            myConnection.close();
+            myConnection = null;
+            console.log('Kick processing completed');
           } else {
+            // Manejar mensaje de kick antes de retransmitir
+            if (data.a === 'kicked') {
+              console.log('Processing kick message in setupConnection');
+              // No retransmitir kick, es un mensaje directo
+              return;
+            }
+            
             // RETRANSMITIR EVENTOS DE JUEGO A OTROS CLIENTES
-            if (['start', 'reset', 'adjust', 'startSecondary', 'resetSecondary', 'changeSpell', 'startGame', 'resetAll', 'unleashedTeleport', 'secondaryHostDesignated', 'secondaryHostIdUpdate'].includes(data.a)) {
+            if (['start', 'reset', 'adjust', 'startSecondary', 'resetSecondary', 'changeSpell', 'startGame', 'resetAll', 'unleashedTeleport', 'secondaryHostDesignated', 'secondaryHostIdUpdate', 'roomStatusChanged', 'maxPlayersChanged', 'kickPlayer'].includes(data.a)) {
               // Retransmitir a todos los otros clientes conectados
               connections.forEach(otherConn => {
                 if (otherConn !== conn && otherConn.open) {
@@ -1963,6 +2044,8 @@
             }
           }
           
+
+          
           // 5.3. Enviar nueva información a TODOS los invitados
           const playersList = Array.from(connectedPlayers.entries())
             .map(([key, value]) => [key, { nick: value.nick, champion: value.champion, color: value.color }]);
@@ -1989,6 +2072,7 @@
           });
           
           updatePlayersBar();
+          RoomManager.updatePlayersList();
           
           // 5.4. Mantener mensaje "Eres el host"
           if (connectedPlayers.size === 1) { // Solo queda el host
@@ -2065,7 +2149,41 @@
         myConnection.on('data', (data) => {
           if (!validateEventData(data)) return;
           
-          if (data.a === 'heartbeat') {
+          console.log('Client received message:', data.a);
+          
+          if (data.a === 'kicked') {
+            console.log('Received kick message, processing expulsion');
+            // Expulsado - limpiar datos y cerrar conexión
+            isReconnecting = false;
+            secondaryHostId = null;
+            secondaryHostBackupId = null;
+            myBackupId = null;
+            hostBackupId = null;
+            
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            
+            const trans = LocalizationManager.getTranslations();
+            document.getElementById('clientStatus').innerHTML = `
+              <span class="error">❌ ${LocalizationManager.t('kicked')}</span>
+              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
+            `;
+            
+            console.log('Closing connection after kick');
+            // Marcar como expulsado para evitar reconexión
+            window.wasKicked = true;
+            
+            // Limpiar estado de la sala
+            connectedPlayers.clear();
+            connectedPlayers.set(myPeerId, { nick: sanitizeNickname(userNickname), lastPong: Date.now(), isSelf: true });
+            updatePlayersBar();
+            
+            // Usuario cierra su propia conexión
+            myConnection.removeAllListeners('close');
+            myConnection.close();
+            myConnection = null;
+            console.log('Kick processing completed');
+            return; // No procesar más
+          } else if (data.a === 'heartbeat') {
             // Responder al heartbeat del HOST
             myConnection.send({ a: 'heartbeatAck', from: myPeerId });
           } else if (data.a === 'hostInfo') {
@@ -2215,6 +2333,20 @@
             setupSyncPanel();
             initPeer();
             updatePlayersBar();
+          } else if (data.a === 'roomFull') {
+            // Sala llena - mostrar mensaje
+            const trans = LocalizationManager.getTranslations();
+            document.getElementById('clientStatus').innerHTML = `
+              <span class="error">❌ ${LocalizationManager.t('roomFull')}</span>
+              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
+            `;
+          } else if (data.a === 'roomClosed') {
+            // Sala cerrada - mostrar mensaje
+            const trans = LocalizationManager.getTranslations();
+            document.getElementById('clientStatus').innerHTML = `
+              <span class="error">🔒 ${LocalizationManager.t('roomClosed')}</span>
+              <span class="user-nick">${sanitizeNickname(userNickname)}</span>
+            `;
           }
           handleSync(data);
         });
@@ -2222,6 +2354,18 @@
         myConnection.on('close', () => {
           clearTimeout(connectionTimeout);
           if (heartbeatInterval) clearInterval(heartbeatInterval);
+          
+          // No intentar reconectar si la sala está cerrada, llena o fue expulsado
+          const clientStatus = document.getElementById('clientStatus');
+          if (clientStatus && (clientStatus.innerHTML.includes('Room is closed') || clientStatus.innerHTML.includes('Closed') || clientStatus.innerHTML.includes('Cerrada') || clientStatus.innerHTML.includes('Full') || clientStatus.innerHTML.includes('Llena') || clientStatus.innerHTML.includes('kicked') || clientStatus.innerHTML.includes('expulsado'))) {
+            return;
+          }
+          
+          // No procesar si fue expulsado
+          if (window.wasKicked) {
+            console.log('Ignoring close event - user was kicked');
+            return;
+          }
           
           // 6. Cuando pierde conexión con el host
           if (secondaryHostId === myPeerId) {
@@ -2459,6 +2603,11 @@
         
         // 2.3. Actualizar información interna backupID y host secundario
         hostBackupId = data.hostBackupId;
+        
+        // Actualizar configuración de sala
+        if (data.maxPlayers) {
+          RoomManager.maxPlayers = data.maxPlayers;
+        }
         
         if (data.youAreSecondaryHost) {
           secondaryHostId = myPeerId;
@@ -2784,6 +2933,16 @@
       if (data.a === 'unleashedTeleport') {
         updateTeleportDuration(240);
       }
+      
+      if (data.a === 'roomStatusChanged') {
+        RoomManager.isOpen = data.isOpen;
+        updatePlayersBar();
+      }
+      
+      if (data.a === 'maxPlayersChanged') {
+        RoomManager.maxPlayers = data.maxPlayers;
+        updatePlayersBar();
+      }
     }
 
     function applyFullState(state) {
@@ -2907,15 +3066,28 @@
         return;
       }
 
+      // Mostrar contador siempre que haya al menos 1 jugador
+      const roomStatusText = RoomManager.isOpen ? 
+        `🟢 ${LocalizationManager.t('open')}` : 
+        `🔴 ${LocalizationManager.t('closed')}`;
+      
+      if (playerCountEl) {
+        const MAX_TOTAL = RoomManager.maxPlayers;
+        playerCountEl.innerHTML = `${roomStatusText} • ${lang === 'es' ? 'Jugadores' : 'Players'}: ${connectedPlayers.size}/${MAX_TOTAL}`;
+        playerCountEl.style.display = 'block';
+        
+        // Cambiar color si está lleno
+        if (connectedPlayers.size >= MAX_TOTAL) {
+          playerCountEl.style.color = '#ff9800';
+        } else {
+          playerCountEl.style.color = '#aaa';
+        }
+      }
+      
       if (connectedPlayers.size === 1) {
         document.getElementById('players-list').textContent = trans.playingSolo;
         if (playerCountEl) playerCountEl.style.display = 'none';
         return;
-      }
-      
-      if (playerCountEl) {
-        playerCountEl.textContent = `${lang === 'es' ? 'Jugadores' : 'Players'}: ${connectedPlayers.size}/7`;
-        playerCountEl.style.display = 'block';
       }
 
       const sorted = Array.from(connectedPlayers.entries())
@@ -3368,6 +3540,28 @@
       AudioManager.init();
       AudioManager.setupAutoResume();
       
+      // Inicializar RoomManager
+      RoomManager.init();
+      if (isHost) {
+        RoomManager.showForHost();
+      }
+      
+      // Exponer funciones para RoomManager
+      window.updatePlayersBar = updatePlayersBar;
+      window.sendEvent = sendEvent;
+      window.connectedPlayers = connectedPlayers;
+      window.connections = connections;
+      
+      // Exponer variables de host secundario
+      Object.defineProperty(window, 'secondaryHostId', {
+        get: () => secondaryHostId,
+        set: (value) => { secondaryHostId = value; }
+      });
+      Object.defineProperty(window, 'secondaryHostBackupId', {
+        get: () => secondaryHostBackupId,
+        set: (value) => { secondaryHostBackupId = value; }
+      });
+      
       // Funciones auxiliares
       function promoteToHost() {
         if (isHost) return;
@@ -3617,12 +3811,12 @@
   </div>
 
   <div class="version-footer">
-    Lol Spell Tracker v0.9.1.1 - 12/9/25 - Autoinvite UPDATE - Enhanced autojoin with window mode support
+    Lol Spell Tracker v0.9.2.0 - 12/9/25 - Manage Room Update 0 - Room management system with host controls
   </div>
 
   <div id="secondary-host-info" style="font-size: 0.7rem; color: #888; text-align: center; margin-top: 5px;"></div>
 
-  <button class="tutorial-toggle" id="tutorialToggle">
+  <button class="tutorial-toggle" id="tutorialToggle" style="width: 280px; max-width: 280px;">
     <span id="tutorialArrow">▼</span>
     <span>Tutorial</span>
   </button>
