@@ -1098,6 +1098,7 @@
     let hostBackupId = null;
     let joinOrder = []; // Para trackear orden de entrada
     let playerBackupIds = new Map();
+    let currentInviteToken = null; // Token de invitación actual
     
     // ====================== INICIALIZACIÓN HOST ======================
     function initializeHost() {
@@ -1107,6 +1108,7 @@
       secondaryHostBackupId = null;
       hostBackupId = null;
       joinOrder = [];
+      currentInviteToken = null;
       
       // 1.3. Generar backupID para el host
       myBackupId = generateShortId();
@@ -1667,11 +1669,14 @@
         return;
       }
       
+      // Generar nuevo token de invitación
+      currentInviteToken = generateShortId().substring(0, 3);
+      
       // Cambiar sala a privada al crear invitación
       RoomManager.toggleRoomStatus(false);
       
       const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
-      const inviteUrl = `${baseUrl}/?invite=${shortId}`;
+      const inviteUrl = `${baseUrl}/?invite=${shortId}${currentInviteToken}`;
       
       navigator.clipboard.writeText(inviteUrl).then(() => {
         const btn = document.getElementById('inviteBtn');
@@ -1790,17 +1795,6 @@
 
       peer.on('connection', (conn) => {
         if (isHost) {
-          const MAX_GUESTS = RoomManager.getMaxGuests();
-          const isInvitation = launchConfig.autoJoin === shortId;
-          if (connections.length >= MAX_GUESTS || !RoomManager.canJoinRoom(isInvitation)) {
-            // Configurar listener temporal para enviar mensaje y cerrar
-            conn.on('open', () => {
-              const reason = !RoomManager.canJoinRoom() ? 'roomClosed' : 'roomFull';
-              conn.send({ a: reason, maxPlayers: RoomManager.maxPlayers });
-              setTimeout(() => conn.close(), 200);
-            });
-            return;
-          }
           setupConnection(conn);
         } else {
           // Invitados solo aceptan conexiones P2P para sincronización de temporizadores
@@ -1841,6 +1835,18 @@
           if (!validateEventData(data)) return;
           
           if (data.a === 'playerInfo') {
+            // Verificar acceso a sala
+            const MAX_GUESTS = RoomManager.getMaxGuests();
+            const hasValidToken = data.inviteToken && data.inviteToken === currentInviteToken;
+            const isInvitation = hasValidToken;
+            
+            if (connections.length >= MAX_GUESTS || !RoomManager.canJoinRoom(isInvitation)) {
+              const reason = !RoomManager.canJoinRoom(isInvitation) ? 'roomClosed' : 'roomFull';
+              conn.send({ a: reason, maxPlayers: RoomManager.maxPlayers });
+              setTimeout(() => conn.close(), 200);
+              return;
+            }
+            
             // 2.1. Recibir información del invitado
             const sanitizedNick = sanitizeNickname(data.nick);
             
@@ -2093,7 +2099,14 @@
     function connectToHost() {
       const trans = LocalizationManager.getTranslations();
       const hostIdInput = document.getElementById('hostIdInput');
-      const hostShortId = hostIdInput.value.trim().toUpperCase();
+      let hostShortId = hostIdInput.value.trim().toUpperCase();
+      let inviteToken = null;
+
+      // Extraer token si la ID tiene 9 caracteres (6 + 3 token)
+      if (hostShortId.length === 9) {
+        inviteToken = hostShortId.substring(6);
+        hostShortId = hostShortId.substring(0, 6);
+      }
 
       if (!/^[A-HJ-NP-Z2-9]{6}$/.test(hostShortId)) {
         document.getElementById('clientStatus').innerHTML = `
@@ -2136,7 +2149,7 @@
         
         setTimeout(() => {
           // 2.2. Enviar información al host
-          myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId });
+          myConnection.send({ a: 'playerInfo', nick: sanitizeNickname(userNickname), champion: userChampion, color: userColor, from: myPeerId, inviteToken: inviteToken });
         
         // Iniciar heartbeat
         heartbeatInterval = setInterval(() => {
@@ -3238,6 +3251,7 @@
         setTimeout(() => {
           const hostIdInput = document.getElementById('hostIdInput');
           if (hostIdInput) {
+            // Usar el código completo (puede incluir token)
             hostIdInput.value = autoJoinCode;
             // Conectar automáticamente
             connectToHost();
@@ -3560,6 +3574,12 @@
       Object.defineProperty(window, 'secondaryHostBackupId', {
         get: () => secondaryHostBackupId,
         set: (value) => { secondaryHostBackupId = value; }
+      });
+      
+      // Exponer token de invitación
+      Object.defineProperty(window, 'currentInviteToken', {
+        get: () => currentInviteToken,
+        set: (value) => { currentInviteToken = value; }
       });
       
       // Funciones auxiliares

@@ -219,6 +219,11 @@ class RoomManager {
           console.log('Sending kick message');
           conn.send({ a: 'kicked' });
           console.log('Kick message sent');
+          
+          // Invalidar token de invitación al expulsar
+          if (window.currentInviteToken !== undefined) {
+            window.currentInviteToken = null;
+          }
         }
       }
     }
